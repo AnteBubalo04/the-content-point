@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>The Content Point — Premium Experience Showcase</title>
+
+    <meta
+      name="description"
+      content="A premium scroll-driven showcase of guest activation, branded content creation, and seamless delivery."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <main class="page-shell">
+      <section class="story" id="story" aria-label="Interactive product story">
+        <div class="stage" id="stage">
+          <div class="stage-backdrop"></div>
+          <div class="stage-glow stage-glow-a"></div>
+          <div class="stage-glow stage-glow-b"></div>
+          <div class="stage-grid"></div>
+          <div class="stage-vignette"></div>
+
+          <header class="hero-copy" id="heroCopy">
+            <p class="hero-badge">Premium guest conversion system</p>
+            <h1>The Content Point</h1>
+            <p class="hero-tech">Customer Technology</p>
+          </header>
+
+          <!-- LEFT SIDE -->
+          <aside
+            class="info-panel info-panel-left"
+            id="infoPanel"
+            aria-live="polite"
+          >
+            <div class="info-panel-inner">
+              <div class="copy-anim" id="infoCopyMotion">
+                <div class="eyebrow-wrap">
+                  <span class="info-kicker" id="infoKicker">Step 01</span>
+                  <span class="info-line"></span>
+                </div>
+
+                <div class="info-copy">
+                  <p class="info-leadline" id="infoLeadline">
+                    Turn walk-by attention into instant participation.
+                  </p>
+
+                  <h2 id="infoTitle">Scan. Start. Join.</h2>
+
+                  <p id="infoBody">
+                    Guests notice the setup and enter the experience in seconds
+                    by scanning the QR code.
+                  </p>
+                </div>
+
+                <div class="value-strip">
+                  <span class="value-pill" id="infoPillA">High attention</span>
+                  <span class="value-pill" id="infoPillB">Instant entry</span>
+                  <span class="value-pill" id="infoPillC">Low friction</span>
+                </div>
+
+                <div class="info-bottomline">
+                  <span class="info-bottom-label" id="infoTag"
+                    >Brand-ready</span
+                  >
+                  <p id="infoDetail">
+                    The same journey adapts to your venue, offer and customer
+                    flow.
+                  </p>
+                </div>
+              </div>
+
+              <p class="global-demo-note" id="infoImplementation">
+                Demo branding is illustrative only. In production, visuals, CTA,
+                tags and destination link are fully replaced with the client’s
+                own brand system.
+              </p>
+            </div>
+          </aside>
+
+          <!-- RIGHT SIDE -->
+          <aside
+            class="process-panel"
+            id="processPanel"
+            aria-label="Process navigation"
+          >
+            <div class="process-panel-inner">
+              <div class="process-summary copy-anim" id="processSummaryMotion">
+                <p class="process-summary-label">System logic</p>
+                <p class="process-summary-text" id="processSummary">
+                  Attention becomes branded content, then moves into sharing and
+                  business action.
+                </p>
+              </div>
+
+              <div class="step-nav" aria-hidden="true">
+                <div class="step-item is-active" id="step1">
+                  <span class="step-index">01</span>
+                  <span class="step-label">Activation</span>
+                </div>
+
+                <div class="step-item" id="step2">
+                  <span class="step-index">02</span>
+                  <span class="step-label">Creation</span>
+                </div>
+
+                <div class="step-item" id="step3">
+                  <span class="step-index">03</span>
+                  <span class="step-label">Delivery</span>
+                </div>
+              </div>
+
+              <div class="progress-track" aria-hidden="true">
+                <span class="progress-base"></span>
+                <span class="progress-fill" id="progressFill"></span>
+                <span class="progress-glow"></span>
+              </div>
+
+              <div class="mini-points process-points" id="miniPoints">
+                <span class="mini-point">Physical station</span>
+                <span class="mini-point">QR start</span>
+                <span class="mini-point">Brand CTA</span>
+              </div>
+            </div>
+          </aside>
+
+          <div class="scene" id="scene" aria-hidden="true">
+            <div class="device-stack" id="deviceStack">
+              <div class="device-shell device-shell-1 is-visible" id="plateV1">
+                <div class="device-frame unified-frame phone-frame">
+                  <div class="device-bezel"></div>
+                  <div class="media-viewport" id="viewport1">
+                    <video
+                      id="video1"
+                      class="video-el"
+                      src="assets/video1.mp4"
+                      muted
+                      playsinline
+                      autoplay
+                      loop
+                      preload="auto"
+                    ></video>
+                  </div>
+                  <div class="device-sheen"></div>
+                  <div class="device-edge"></div>
+                </div>
+              </div>
+
+              <div class="device-halo" id="phoneHalo" aria-hidden="true"></div>
+
+              <div class="device-shell device-shell-2" id="phonePlate">
+                <div class="device-frame unified-frame phone-frame">
+                  <div class="device-bezel"></div>
+                  <div class="media-viewport" id="viewport2">
+                    <video
+                      id="video2"
+                      class="video-el"
+                      src="assets/video2.mp4"
+                      muted
+                      playsinline
+                      autoplay
+                      loop
+                      preload="auto"
+                    ></video>
+                  </div>
+                  <div class="device-sheen"></div>
+                  <div class="device-edge"></div>
+                </div>
+              </div>
+
+              <div class="device-shell device-shell-3" id="plateV3">
+                <div class="device-frame unified-frame phone-frame">
+                  <div class="device-bezel"></div>
+                  <div class="media-viewport" id="viewport3">
+                    <video
+                      id="video3"
+                      class="video-el"
+                      src="assets/video3.mp4"
+                      muted
+                      playsinline
+                      autoplay
+                      loop
+                      preload="auto"
+                    ></video>
+                  </div>
+                  <div class="device-sheen"></div>
+                  <div class="device-edge"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ending-copy" id="endingCopy" aria-hidden="true">
+            <div class="ending-copy-inner">
+              <span class="ending-overline">Guest journey complete</span>
+              <strong>Your guest. Your rules.</strong>
+              <p>
+                Shape what happens next — sharing, traffic, bookings or repeat
+                visits.
+              </p>
+            </div>
+          </div>
+
+          <div class="scroll-indicator" id="scrollIndicator" aria-hidden="true">
+            <span>Scroll</span>
+            <span class="scroll-arrow">↓</span>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="demo-section"
+        id="demoSection"
+        aria-labelledby="demoTitle"
+      >
+        <div class="demo-shell">
+          <div class="demo-copy">
+            <p class="demo-kicker">Next step</p>
+            <h2 id="demoTitle">Book a Demo</h2>
+            <p class="demo-lead">
+              See the full guest journey in a live walkthrough — from on-site
+              activation and branded content creation to instant delivery,
+              sharing and measurable campaign outcomes.
+            </p>
+
+            <div class="demo-highlights" aria-hidden="true">
+              <div class="demo-highlight">
+                <span class="demo-highlight-title">Activation</span>
+                <span class="demo-highlight-text">
+                  A physical trigger, QR entry and a frictionless start
+                </span>
+              </div>
+              <div class="demo-highlight">
+                <span class="demo-highlight-title">Creation</span>
+                <span class="demo-highlight-text">
+                  Your visual identity, your motion language and your tags
+                </span>
+              </div>
+              <div class="demo-highlight">
+                <span class="demo-highlight-title">Delivery</span>
+                <span class="demo-highlight-text">
+                  Sharing flow, booking link, reward logic and tracking options
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <form class="demo-form">
+            <label>
+              <span>Name</span>
+              <input type="text" name="name" placeholder="Your full name" />
+            </label>
+
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" placeholder="you@company.com" />
+            </label>
+
+            <label>
+              <span>Company</span>
+              <input type="text" name="company" placeholder="Company name" />
+            </label>
+
+            <label>
+              <span>Message</span>
+              <textarea
+                name="message"
+                rows="5"
+                placeholder="Tell us what you want to see in the demo"
+              ></textarea>
+            </label>
+
+            <button type="submit" class="demo-submit" aria-label="Book a Demo">
+              <span class="demo-submit-text">Book a Demo</span>
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
