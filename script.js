@@ -141,19 +141,19 @@ const TUNE = {
   stackYDesktopHero: 0,
 
   stackYTabletStart: 74,
-  stackYTabletHero: 0,
+  stackYTabletHero: 6,
 
-  stackYMobileStart: 62,
-  stackYMobileHero: 6,
+  stackYMobileStart: 92,
+  stackYMobileHero: 28,
 
   stackScaleDesktopStart: 0.84,
   stackScaleDesktopHero: 1.0,
 
-  stackScaleTabletStart: 0.86,
-  stackScaleTabletHero: 1.0,
+  stackScaleTabletStart: 0.82,
+  stackScaleTabletHero: 0.96,
 
-  stackScaleMobileStart: 0.88,
-  stackScaleMobileHero: 0.98,
+  stackScaleMobileStart: 0.82,
+  stackScaleMobileHero: 0.92,
 };
 
 const PHASE = {
@@ -290,11 +290,14 @@ function pauseVideo(video) {
 
 function updateStoryHeight() {
   const w = window.innerWidth;
+  const h = window.innerHeight;
   let value = 1180;
 
-  if (w <= 560) value = 1520;
-  else if (w <= 760) value = 1450;
-  else if (w <= 980) value = 1300;
+  if (w <= 560) value = 1580;
+  else if (w <= 760) value = 1500;
+  else if (w <= 980) value = 1360;
+
+  if (w <= 980 && h <= 760) value += 70;
 
   story.style.height = `${value}vh`;
 }
@@ -368,13 +371,6 @@ function normalizeCropRect(rect, source, options = {}) {
   return next;
 }
 
-/**
- * Pixel-stable crop transform.
- * For video1 this removes micro-jitter during scroll/zoom by:
- * - snapping crop rect to source pixels
- * - snapping translate + scale to device pixels
- * - slightly reducing overscan noise
- */
 function setVideoCrop(video, viewportEl, rect, source, options = {}) {
   if (!video || !viewportEl || !rect || !source) return;
 
@@ -580,7 +576,6 @@ function renderScene(progress) {
 
   const v3Rect = getVideo3CropRect(sourceV3);
 
-  // Video 1 stabilization: snapped crop rect + snapped transforms + scale quantization
   setVideoCrop(video1, viewport1, v1Rect, sourceV1, {
     overscan: 1.001,
     hairlineFixX: 0,
@@ -656,8 +651,8 @@ function renderScene(progress) {
   ).toFixed(3)}px, 0)`;
 
   if (window.innerWidth <= 980) {
-    infoPanel.style.transform = `translate3d(0, ${lerp(20, 0, leftPanelIn).toFixed(3)}px, 0)`;
-    processPanel.style.transform = `translate3d(0, ${lerp(18, 0, rightPanelIn).toFixed(3)}px, 0)`;
+    infoPanel.style.transform = `translate3d(-50%, ${lerp(20, 0, leftPanelIn).toFixed(3)}px, 0)`;
+    processPanel.style.transform = `translate3d(-50%, ${lerp(18, 0, rightPanelIn).toFixed(3)}px, 0)`;
   } else {
     infoPanel.style.transform = `translate3d(${lerp(-26, 0, leftPanelIn).toFixed(3)}px, -50%, 0)`;
     processPanel.style.transform = `translate3d(${lerp(26, 0, rightPanelIn).toFixed(3)}px, -50%, 0)`;
