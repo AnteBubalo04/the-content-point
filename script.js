@@ -12,7 +12,6 @@ const easeInOutCubic = (t) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
-const easeInOutSine = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
 
 const mix01 = (progress, start, end, ease = easeInOutCubic) =>
   ease(invLerp(progress, start, end));
@@ -154,7 +153,7 @@ const COPY = {
 };
 
 const TUNE = {
-  scrollSmoothing: prefersReducedMotion ? 40 : 11.5,
+  scrollSmoothing: prefersReducedMotion ? 40 : 10.25,
 
   stackYDesktopStart: 88,
   stackYDesktopHero: 0,
@@ -176,13 +175,6 @@ const TUNE = {
   mobileDetailYFactor: -0.17,
 
   mobileCardEnterY: 26,
-
-  snapIdleMs: prefersReducedMotion ? 70 : 110,
-  snapDuration: prefersReducedMotion ? 0 : 420,
-  snapThresholdDesktop: 0.034,
-  snapThresholdMobile: 0.052,
-  snapThresholdDesktopRelease: 0.046,
-  snapThresholdMobileRelease: 0.068,
 };
 
 const DESKTOP_PHASE = {
@@ -232,14 +224,6 @@ let lastRenderKey = "";
 let currentCopyKey = "";
 let rafResizeCounter = 0;
 
-let scrollEndTimer = 0;
-let snapRaf = 0;
-let snapAnimationToken = 0;
-let isTouching = false;
-let isPointerDown = false;
-let isSnapAnimating = false;
-let snapReleaseRequested = false;
-
 const layoutCache = {
   isTablet: false,
   isMobile: false,
@@ -247,6 +231,25 @@ const layoutCache = {
   stackScaleHero: 1,
   stackYStart: 0,
   stackYHero: 0,
+};
+
+const snapState = {
+  isAnimating: false,
+  animationFrame: 0,
+  lockUntil: 0,
+  currentStationIndex: 0,
+  requestedStationIndex: 0,
+
+  wheelGestureLocked: false,
+  wheelGestureTimer: 0,
+
+  touchActive: false,
+  touchMoved: false,
+  touchTriggered: false,
+  touchStartY: 0,
+  touchLastY: 0,
+
+  releaseSnapTimer: 0,
 };
 
 function setTransform(el, x, y, scale) {
@@ -415,145 +418,178 @@ function getStoryProgress() {
   return clamp(current / maxScroll, 0, 1);
 }
 
-function getStoryScrollMetrics() {
+function getStoryMetrics() {
+  const rect = story.getBoundingClientRect();
+  const top = window.scrollY + rect.top;
   const maxScroll = Math.max(story.offsetHeight - window.innerHeight, 1);
-  const storyTopAbs = window.scrollY + story.getBoundingClientRect().top;
   return {
-    storyTopAbs,
+    top,
     maxScroll,
+    startY: top,
+    endY: top + maxScroll,
   };
 }
 
-function progressToScrollY(progress) {
-  const metrics = getStoryScrollMetrics();
-  return metrics.storyTopAbs + clamp(progress, 0, 1) * metrics.maxScroll;
+function progressToPageY(progress) {
+  const metrics = getStoryMetrics();
+  return metrics.startY + metrics.maxScroll * clamp(progress, 0, 1);
 }
 
-function getSnapAnchors() {
+function isStoryScrollLockedRegion() {
+  const metrics = getStoryMetrics();
+  const y = window.scrollY;
+  return y >= metrics.startY && y <= metrics.endY;
+}
+
+function getSnapStations() {
   if (layoutCache.isMobile) {
     return [
-      { progress: 0.26, weight: 1.0 },
-      { progress: 0.605, weight: 1.0 },
-      { progress: 0.885, weight: 1.0 },
-      { progress: 0.982, weight: 0.9 },
+      0,
+      MOBILE_PHASE.step1Detail[1],
+      MOBILE_PHASE.step2Detail[1],
+      MOBILE_PHASE.step3Detail[1],
+      1,
     ];
   }
 
   return [
-    { progress: 0.19, weight: 1.0 },
-    { progress: 0.54, weight: 1.0 },
-    { progress: 0.84, weight: 1.0 },
-    { progress: 0.978, weight: 0.9 },
+    0,
+    DESKTOP_PHASE.step1[1],
+    DESKTOP_PHASE.step2[1],
+    DESKTOP_PHASE.step3[1],
+    1,
   ];
 }
 
-function findNearestSnapAnchor(progress, useReleaseThreshold = false) {
-  const anchors = getSnapAnchors();
-  const baseThreshold = layoutCache.isMobile
-    ? useReleaseThreshold
-      ? TUNE.snapThresholdMobileRelease
-      : TUNE.snapThresholdMobile
-    : useReleaseThreshold
-      ? TUNE.snapThresholdDesktopRelease
-      : TUNE.snapThresholdDesktop;
+function getClosestSnapIndex(progress) {
+  const stations = getSnapStations();
+  let closestIndex = 0;
+  let closestDistance = Infinity;
 
-  let best = null;
-  let bestDistance = Infinity;
-
-  anchors.forEach((anchor) => {
-    const distance = Math.abs(progress - anchor.progress);
-    const effectiveDistance = distance / (anchor.weight || 1);
-
-    if (effectiveDistance < bestDistance) {
-      bestDistance = effectiveDistance;
-      best = anchor;
+  for (let i = 0; i < stations.length; i += 1) {
+    const distance = Math.abs(progress - stations[i]);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = i;
     }
-  });
+  }
 
-  if (!best) return null;
+  return closestIndex;
+}
 
-  const actualDistance = Math.abs(progress - best.progress);
-  return actualDistance <= baseThreshold ? best : null;
+function syncCurrentStationFromScroll() {
+  snapState.currentStationIndex = getClosestSnapIndex(getStoryProgress());
+  snapState.requestedStationIndex = snapState.currentStationIndex;
 }
 
 function cancelSnapAnimation() {
-  snapAnimationToken += 1;
-  isSnapAnimating = false;
-
-  if (snapRaf) {
-    cancelAnimationFrame(snapRaf);
-    snapRaf = 0;
+  if (snapState.animationFrame) {
+    cancelAnimationFrame(snapState.animationFrame);
+    snapState.animationFrame = 0;
   }
+  snapState.isAnimating = false;
 }
 
-function animateScrollTo(targetY, duration = TUNE.snapDuration) {
+function animateWindowScrollTo(targetY, duration = 720, onDone) {
   cancelSnapAnimation();
 
   const startY = window.scrollY;
-  const maxY = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
-  const safeTargetY = clamp(targetY, 0, maxY);
+  const delta = targetY - startY;
 
-  if (Math.abs(safeTargetY - startY) < 1) {
-    window.scrollTo(0, safeTargetY);
-    lastRenderKey = "";
+  if (Math.abs(delta) < 1) {
+    window.scrollTo(0, targetY);
+    snapState.isAnimating = false;
+    onDone?.();
     return;
   }
 
-  if (duration <= 0) {
-    window.scrollTo(0, safeTargetY);
-    lastRenderKey = "";
-    return;
-  }
-
-  const token = snapAnimationToken;
+  snapState.isAnimating = true;
   const startTime = performance.now();
-  isSnapAnimating = true;
 
   const step = (now) => {
-    if (token !== snapAnimationToken) return;
-
     const t = clamp((now - startTime) / duration, 0, 1);
-    const eased = easeInOutSine(t);
-    const nextY = lerp(startY, safeTargetY, eased);
-
+    const eased = easeInOutCubic(t);
+    const nextY = startY + delta * eased;
     window.scrollTo(0, nextY);
     lastRenderKey = "";
 
     if (t < 1) {
-      snapRaf = requestAnimationFrame(step);
+      snapState.animationFrame = requestAnimationFrame(step);
       return;
     }
 
-    isSnapAnimating = false;
-    snapRaf = 0;
+    window.scrollTo(0, targetY);
+    snapState.animationFrame = 0;
+    snapState.isAnimating = false;
+    lastRenderKey = "";
+    onDone?.();
   };
 
-  snapRaf = requestAnimationFrame(step);
+  snapState.animationFrame = requestAnimationFrame(step);
 }
 
-function maybeSnapToKeyPosition(useReleaseThreshold = false) {
-  if (!sceneVisible || isTouching || isPointerDown || isSnapAnimating) return;
+function snapToStationIndex(index, options = {}) {
+  const stations = getSnapStations();
+  const clampedIndex = clamp(index, 0, stations.length - 1);
+  const progress = stations[clampedIndex];
+  const targetY = progressToPageY(progress);
+  const duration = options.duration ?? (layoutCache.isMobile ? 1200 : 1100);
 
-  const progress = getStoryProgress();
-  const anchor = findNearestSnapAnchor(progress, useReleaseThreshold);
-  if (!anchor) return;
+  snapState.requestedStationIndex = clampedIndex;
+  snapState.lockUntil = performance.now() + duration + 260;
 
-  const targetY = progressToScrollY(anchor.progress);
-  if (Math.abs(targetY - window.scrollY) < 2) return;
-
-  animateScrollTo(targetY, TUNE.snapDuration);
-}
-
-function scheduleSnapCheck(useReleaseThreshold = false) {
-  if (scrollEndTimer) {
-    clearTimeout(scrollEndTimer);
+  if (prefersReducedMotion || options.instant) {
+    cancelSnapAnimation();
+    window.scrollTo(0, targetY);
+    snapState.currentStationIndex = clampedIndex;
+    snapState.requestedStationIndex = clampedIndex;
+    lastRenderKey = "";
+    return;
   }
 
-  scrollEndTimer = window.setTimeout(() => {
-    scrollEndTimer = 0;
-    maybeSnapToKeyPosition(useReleaseThreshold || snapReleaseRequested);
-    snapReleaseRequested = false;
-  }, TUNE.snapIdleMs);
+  animateWindowScrollTo(targetY, duration, () => {
+    snapState.currentStationIndex = clampedIndex;
+    snapState.requestedStationIndex = clampedIndex;
+  });
+}
+
+function snapToNearestStation() {
+  if (!isStoryScrollLockedRegion()) return;
+  if (snapState.isAnimating) return;
+
+  const index = getClosestSnapIndex(getStoryProgress());
+  snapToStationIndex(index, { duration: layoutCache.isMobile ? 820 : 760 });
+}
+
+function getNextStationIndex(direction) {
+  const stations = getSnapStations();
+  const baseIndex = clamp(
+    snapState.isAnimating
+      ? snapState.requestedStationIndex
+      : snapState.currentStationIndex,
+    0,
+    stations.length - 1,
+  );
+
+  if (direction > 0) {
+    return clamp(baseIndex + 1, 0, stations.length - 1);
+  }
+
+  if (direction < 0) {
+    return clamp(baseIndex - 1, 0, stations.length - 1);
+  }
+
+  return baseIndex;
+}
+
+function releaseWheelGestureLockLater() {
+  if (snapState.wheelGestureTimer) {
+    clearTimeout(snapState.wheelGestureTimer);
+  }
+
+  snapState.wheelGestureTimer = window.setTimeout(() => {
+    snapState.wheelGestureLocked = false;
+  }, 1400);
 }
 
 function lerpRect(a, b, t) {
@@ -649,6 +685,11 @@ function getVideo3CropRect(source) {
 }
 
 function getDesktopOpacities(progress) {
+  const softStep2InStart = DESKTOP_PHASE.step2In[0] - 0.04;
+  const softStep2InEnd = DESKTOP_PHASE.step2In[1] + 0.06;
+  const softStep3InStart = DESKTOP_PHASE.step3In[0] - 0.045;
+  const softStep3InEnd = DESKTOP_PHASE.step3In[1] + 0.065;
+
   let v1 = 1;
   if (progress > DESKTOP_PHASE.step1Out[0]) {
     v1 =
@@ -657,23 +698,15 @@ function getDesktopOpacities(progress) {
         progress,
         DESKTOP_PHASE.step1Out[0],
         DESKTOP_PHASE.step1Out[1],
-        easeInOutSine,
+        easeInOutCubic,
       );
   }
 
   let v2 = 0;
-  if (
-    progress >= DESKTOP_PHASE.step2In[0] - 0.018 &&
-    progress < DESKTOP_PHASE.step2In[1]
-  ) {
-    v2 = mix01(
-      progress,
-      DESKTOP_PHASE.step2In[0] - 0.018,
-      DESKTOP_PHASE.step2In[1],
-      easeInOutSine,
-    );
+  if (progress >= softStep2InStart && progress < softStep2InEnd) {
+    v2 = mix01(progress, softStep2InStart, softStep2InEnd, easeInOutCubic);
   } else if (
-    progress >= DESKTOP_PHASE.step2In[1] &&
+    progress >= softStep2InEnd &&
     progress <= DESKTOP_PHASE.step2Out[0]
   ) {
     v2 = 1;
@@ -687,23 +720,15 @@ function getDesktopOpacities(progress) {
         progress,
         DESKTOP_PHASE.step2Out[0],
         DESKTOP_PHASE.step2Out[1],
-        easeInOutSine,
+        easeInOutCubic,
       );
   }
 
   let v3 = 0;
-  if (
-    progress >= DESKTOP_PHASE.step3In[0] - 0.02 &&
-    progress < DESKTOP_PHASE.step3In[1]
-  ) {
-    v3 = mix01(
-      progress,
-      DESKTOP_PHASE.step3In[0] - 0.02,
-      DESKTOP_PHASE.step3In[1],
-      easeInOutSine,
-    );
+  if (progress >= softStep3InStart && progress < softStep3InEnd) {
+    v3 = mix01(progress, softStep3InStart, softStep3InEnd, easeInOutCubic);
   } else if (
-    progress >= DESKTOP_PHASE.step3In[1] &&
+    progress >= softStep3InEnd &&
     progress <= DESKTOP_PHASE.step3Out[0]
   ) {
     v3 = 1;
@@ -717,7 +742,7 @@ function getDesktopOpacities(progress) {
         progress,
         DESKTOP_PHASE.step3Out[0],
         DESKTOP_PHASE.step3Out[1],
-        easeInOutSine,
+        easeInOutCubic,
       );
   }
 
@@ -742,7 +767,7 @@ function getMobileStepState(progress) {
         progress,
         MOBILE_PHASE.step1Cross[0],
         MOBILE_PHASE.step1Cross[1],
-        easeInOutSine,
+        easeInOutCubic,
       ),
       endingT: 0,
     };
@@ -761,7 +786,7 @@ function getMobileStepState(progress) {
         progress,
         MOBILE_PHASE.step2Cross[0],
         MOBILE_PHASE.step2Cross[1],
-        easeInOutSine,
+        easeInOutCubic,
       ),
       endingT: 0,
     };
@@ -779,7 +804,7 @@ function getMobileStepState(progress) {
       progress,
       MOBILE_PHASE.step3Out[0],
       MOBILE_PHASE.step3Out[1],
-      easeInOutSine,
+      easeInOutCubic,
     ),
     endingT: mix01(
       progress,
@@ -792,6 +817,13 @@ function getMobileStepState(progress) {
 
 function getMobileStepShellState(stepIndex, progress) {
   const detailY = Math.round(window.innerHeight * TUNE.mobileDetailYFactor);
+  const mobileCrossEase = easeInOutCubic;
+  const step1CrossStart = MOBILE_PHASE.step1Cross[0] - 0.03;
+  const step1CrossEnd = MOBILE_PHASE.step1Cross[1] + 0.04;
+  const step2CrossStart = MOBILE_PHASE.step2Cross[0] - 0.03;
+  const step2CrossEnd = MOBILE_PHASE.step2Cross[1] + 0.04;
+  const step3OutStart = MOBILE_PHASE.step3Out[0] - 0.02;
+  const step3OutEnd = MOBILE_PHASE.step3Out[1] + 0.02;
 
   if (stepIndex === 0) {
     const detailT = mix01(
@@ -801,7 +833,7 @@ function getMobileStepShellState(stepIndex, progress) {
       easeInOutCubic,
     );
 
-    if (progress < MOBILE_PHASE.step1Cross[0]) {
+    if (progress < step1CrossStart) {
       return {
         opacity: 1,
         y: lerp(TUNE.mobileForegroundY, detailY, detailT),
@@ -813,12 +845,12 @@ function getMobileStepShellState(stepIndex, progress) {
       };
     }
 
-    if (progress < MOBILE_PHASE.step1Cross[1]) {
+    if (progress < step1CrossEnd) {
       const fadeT = mix01(
         progress,
-        MOBILE_PHASE.step1Cross[0],
-        MOBILE_PHASE.step1Cross[1],
-        easeInOutSine,
+        step1CrossStart,
+        step1CrossEnd,
+        mobileCrossEase,
       );
       return {
         opacity: 1 - fadeT,
@@ -835,7 +867,7 @@ function getMobileStepShellState(stepIndex, progress) {
   }
 
   if (stepIndex === 1) {
-    if (progress < MOBILE_PHASE.step1Cross[0]) {
+    if (progress < step1CrossStart) {
       return {
         opacity: 0,
         y: TUNE.mobileForegroundY,
@@ -843,12 +875,12 @@ function getMobileStepShellState(stepIndex, progress) {
       };
     }
 
-    if (progress < MOBILE_PHASE.step1Cross[1]) {
+    if (progress < step1CrossEnd) {
       const fadeT = mix01(
         progress,
-        MOBILE_PHASE.step1Cross[0],
-        MOBILE_PHASE.step1Cross[1],
-        easeInOutSine,
+        step1CrossStart,
+        step1CrossEnd,
+        mobileCrossEase,
       );
       return {
         opacity: fadeT,
@@ -883,12 +915,12 @@ function getMobileStepShellState(stepIndex, progress) {
       };
     }
 
-    if (progress < MOBILE_PHASE.step2Cross[1]) {
+    if (progress < step2CrossEnd) {
       const fadeT = mix01(
         progress,
-        MOBILE_PHASE.step2Cross[0],
-        MOBILE_PHASE.step2Cross[1],
-        easeInOutSine,
+        step2CrossStart,
+        step2CrossEnd,
+        mobileCrossEase,
       );
       return {
         opacity: 1 - fadeT,
@@ -904,7 +936,7 @@ function getMobileStepShellState(stepIndex, progress) {
     };
   }
 
-  if (progress < MOBILE_PHASE.step2Cross[0]) {
+  if (progress < step2CrossStart) {
     return {
       opacity: 0,
       y: TUNE.mobileForegroundY,
@@ -912,12 +944,12 @@ function getMobileStepShellState(stepIndex, progress) {
     };
   }
 
-  if (progress < MOBILE_PHASE.step2Cross[1]) {
+  if (progress < step2CrossEnd) {
     const fadeT = mix01(
       progress,
-      MOBILE_PHASE.step2Cross[0],
-      MOBILE_PHASE.step2Cross[1],
-      easeInOutSine,
+      step2CrossStart,
+      step2CrossEnd,
+      mobileCrossEase,
     );
     return {
       opacity: fadeT,
@@ -948,13 +980,8 @@ function getMobileStepShellState(stepIndex, progress) {
     };
   }
 
-  if (progress < MOBILE_PHASE.step3Out[1]) {
-    const fadeT = mix01(
-      progress,
-      MOBILE_PHASE.step3Out[0],
-      MOBILE_PHASE.step3Out[1],
-      easeInOutSine,
-    );
+  if (progress < step3OutEnd) {
+    const fadeT = mix01(progress, step3OutStart, step3OutEnd, mobileCrossEase);
     return {
       opacity: 1 - fadeT,
       y: detailY,
@@ -1408,9 +1435,9 @@ function requestResizeRecalc() {
     rafResizeCounter += 1;
     updateStoryHeight();
     updateLayoutCache();
-    cancelSnapAnimation();
     lastRenderKey = "";
     renderScene(smoothProgress);
+    syncCurrentStationFromScroll();
   });
 }
 
@@ -1492,8 +1519,15 @@ window.addEventListener(
   "scroll",
   () => {
     lastRenderKey = "";
-    if (!isSnapAnimating) {
-      scheduleSnapCheck(false);
+
+    if (snapState.releaseSnapTimer) {
+      clearTimeout(snapState.releaseSnapTimer);
+    }
+
+    if (!snapState.isAnimating && isStoryScrollLockedRegion()) {
+      snapState.releaseSnapTimer = setTimeout(() => {
+        snapToNearestStation();
+      }, 120);
     }
   },
   { passive: true },
@@ -1501,75 +1535,103 @@ window.addEventListener(
 
 window.addEventListener(
   "wheel",
-  () => {
-    snapReleaseRequested = false;
-    if (!isSnapAnimating) {
-      scheduleSnapCheck(false);
+  (event) => {
+    if (prefersReducedMotion) return;
+    if (!isStoryScrollLockedRegion()) return;
+
+    event.preventDefault();
+
+    if (snapState.wheelGestureLocked || snapState.isAnimating) return;
+    if (performance.now() < snapState.lockUntil) return;
+
+    const deltaY = event.deltaY || 0;
+    if (Math.abs(deltaY) < 4) return;
+
+    const direction = deltaY > 0 ? 1 : -1;
+    const targetIndex = getNextStationIndex(direction);
+
+    if (targetIndex === snapState.currentStationIndex) {
+      snapState.wheelGestureLocked = true;
+      releaseWheelGestureLockLater();
+      snapToNearestStation();
+      return;
     }
+
+    snapState.wheelGestureLocked = true;
+    releaseWheelGestureLockLater();
+
+    snapToStationIndex(targetIndex, {
+      duration: layoutCache.isMobile ? 1260 : 1160,
+    });
+  },
+  { passive: false },
+);
+
+window.addEventListener(
+  "touchstart",
+  (event) => {
+    if (!event.touches || !event.touches.length) return;
+
+    snapState.touchActive =
+      isStoryScrollLockedRegion() && !prefersReducedMotion;
+    snapState.touchMoved = false;
+    snapState.touchTriggered = false;
+    snapState.touchStartY = event.touches[0].clientY;
+    snapState.touchLastY = event.touches[0].clientY;
   },
   { passive: true },
 );
 
 window.addEventListener(
-  "touchstart",
-  () => {
-    isTouching = true;
-    snapReleaseRequested = false;
-    cancelSnapAnimation();
+  "touchmove",
+  (event) => {
+    if (!snapState.touchActive) return;
+    if (!event.touches || !event.touches.length) return;
+
+    event.preventDefault();
+
+    snapState.touchMoved = true;
+    snapState.touchLastY = event.touches[0].clientY;
+
+    if (snapState.touchTriggered || snapState.isAnimating) return;
+    if (performance.now() < snapState.lockUntil) return;
+
+    const deltaY = snapState.touchLastY - snapState.touchStartY;
+    const absDeltaY = Math.abs(deltaY);
+    const swipeThreshold = Math.max(16, window.innerHeight * 0.02);
+
+    if (absDeltaY < swipeThreshold) return;
+
+    snapState.touchTriggered = true;
+
+    const direction = deltaY < 0 ? 1 : -1;
+    const targetIndex = getNextStationIndex(direction);
+
+    if (targetIndex === snapState.currentStationIndex) {
+      snapToNearestStation();
+      return;
+    }
+
+    snapToStationIndex(targetIndex, {
+      duration: layoutCache.isMobile ? 1320 : 1200,
+    });
   },
-  { passive: true },
+  { passive: false },
 );
 
 window.addEventListener(
   "touchend",
   () => {
-    isTouching = false;
-    snapReleaseRequested = true;
-    scheduleSnapCheck(true);
-  },
-  { passive: true },
-);
+    if (prefersReducedMotion) return;
+    if (!snapState.touchActive) return;
 
-window.addEventListener(
-  "touchcancel",
-  () => {
-    isTouching = false;
-    snapReleaseRequested = true;
-    scheduleSnapCheck(true);
-  },
-  { passive: true },
-);
+    snapState.touchActive = false;
 
-window.addEventListener(
-  "pointerdown",
-  (event) => {
-    if (event.pointerType === "touch" || event.pointerType === "pen") {
-      isPointerDown = true;
-      cancelSnapAnimation();
-    }
-  },
-  { passive: true },
-);
+    if (!isStoryScrollLockedRegion()) return;
+    if (snapState.isAnimating) return;
 
-window.addEventListener(
-  "pointerup",
-  (event) => {
-    if (event.pointerType === "touch" || event.pointerType === "pen") {
-      isPointerDown = false;
-      snapReleaseRequested = true;
-      scheduleSnapCheck(true);
-    }
-  },
-  { passive: true },
-);
-
-window.addEventListener(
-  "pointercancel",
-  (event) => {
-    if (event.pointerType === "touch" || event.pointerType === "pen") {
-      isPointerDown = false;
-      snapReleaseRequested = true;
-      scheduleSnapCheck(true);
+    if (!snapState.touchTriggered) {
+      snapToNearestStation();
     }
   },
   { passive: true },
@@ -1585,6 +1647,7 @@ window.addEventListener("load", () => {
   primeVideo(video3);
 
   smoothProgress = getStoryProgress();
+  syncCurrentStationFromScroll();
   renderScene(smoothProgress);
   rafId = requestAnimationFrame(tick);
 
@@ -1593,6 +1656,7 @@ window.addEventListener("load", () => {
     updateLayoutCache();
     lastRenderKey = "";
     renderScene(smoothProgress);
+    syncCurrentStationFromScroll();
   }, 140);
 
   setTimeout(() => {
@@ -1600,12 +1664,12 @@ window.addEventListener("load", () => {
     updateLayoutCache();
     lastRenderKey = "";
     renderScene(smoothProgress);
+    syncCurrentStationFromScroll();
   }, 420);
 });
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
-    cancelSnapAnimation();
     pauseVideo(video1);
     pauseVideo(video2);
     pauseVideo(video3);
@@ -1624,4 +1688,12 @@ window.addEventListener("beforeunload", () => {
   cancelSnapAnimation();
   observer.disconnect();
   resizeObserver.disconnect();
+
+  if (snapState.wheelGestureTimer) {
+    clearTimeout(snapState.wheelGestureTimer);
+  }
+
+  if (snapState.releaseSnapTimer) {
+    clearTimeout(snapState.releaseSnapTimer);
+  }
 });
