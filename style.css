@@ -597,21 +597,23 @@ body::-webkit-scrollbar-thumb {
   display: none;
   left: 50%;
   bottom: max(12px, calc(var(--safe-bottom) + 8px));
-  width: calc(100vw - 16px - var(--safe-left) - var(--safe-right));
-  max-width: 460px;
+  width: calc(100vw - 18px - var(--safe-left) - var(--safe-right));
+  max-width: 520px;
   transform: translateX(-50%);
   pointer-events: none;
   z-index: 52;
 }
 
 .mobile-story-card-inner {
-  padding: 14px 14px 13px;
-  border-radius: 24px;
+  padding: 18px 18px 16px;
+  border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(8, 12, 21, 0.94), rgba(8, 12, 21, 0.82)),
-    rgba(8, 12, 21, 0.82);
+    linear-gradient(180deg, rgba(7, 11, 20, 0.96), rgba(7, 11, 20, 0.9)),
+    rgba(8, 12, 21, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: var(--panel-shadow);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(18px);
 }
 
@@ -620,7 +622,7 @@ body::-webkit-scrollbar-thumb {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .mobile-kicker,
@@ -644,13 +646,13 @@ body::-webkit-scrollbar-thumb {
 
 .mobile-copy {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .mobile-leadline {
   margin: 0;
   font-size: 10px;
-  line-height: 1.4;
+  line-height: 1.42;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(208, 221, 248, 0.7);
@@ -660,39 +662,39 @@ body::-webkit-scrollbar-thumb {
 .mobile-title {
   margin: 0;
   font-family: "Manrope", "Inter", system-ui, sans-serif;
-  font-size: clamp(28px, 7.4vw, 40px);
-  line-height: 0.95;
-  letter-spacing: -0.07em;
+  font-size: clamp(34px, 10vw, 48px);
+  line-height: 0.94;
+  letter-spacing: -0.075em;
   color: #fff;
   text-wrap: balance;
 }
 
 .mobile-body {
   margin: 0;
-  color: rgba(240, 245, 255, 0.92);
-  font-size: 13px;
-  line-height: 1.5;
+  color: rgba(240, 245, 255, 0.94);
+  font-size: 15px;
+  line-height: 1.56;
 }
 
 .mobile-detail {
   margin: 0;
-  color: rgba(212, 224, 248, 0.68);
-  font-size: 11px;
-  line-height: 1.48;
+  color: rgba(212, 224, 248, 0.72);
+  font-size: 12px;
+  line-height: 1.54;
 }
 
 .mobile-value-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .mobile-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 11px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.034);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -704,7 +706,7 @@ body::-webkit-scrollbar-thumb {
 }
 
 .mobile-summary-block {
-  margin-top: 12px;
+  margin-top: 14px;
   display: grid;
   gap: 6px;
 }
@@ -717,14 +719,14 @@ body::-webkit-scrollbar-thumb {
   margin: 0;
   color: rgba(235, 241, 255, 0.84);
   font-size: 11px;
-  line-height: 1.46;
+  line-height: 1.48;
 }
 
 .mobile-progress-track {
   position: relative;
   height: 2px;
   border-radius: 999px;
-  margin-top: 12px;
+  margin-top: 14px;
   overflow: hidden;
 }
 
@@ -755,14 +757,14 @@ body::-webkit-scrollbar-thumb {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .mobile-step-item {
   display: grid;
   gap: 4px;
-  padding: 8px 8px 9px;
-  border-radius: 14px;
+  padding: 10px 10px 11px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(255, 255, 255, 0.02);
   opacity: 0.44;
@@ -1263,11 +1265,11 @@ body::-webkit-scrollbar-thumb {
 
 @media (max-width: 980px) {
   :root {
-    --radius-phone: 25px;
+    --radius-phone: 26px;
   }
 
   .story {
-    height: 1480vh;
+    height: 1680vh;
   }
 
   .hero-copy {
@@ -1300,7 +1302,7 @@ body::-webkit-scrollbar-thumb {
   }
 
   .device-stack {
-    width: clamp(188px, 46vw, 260px);
+    width: clamp(248px, 72vw, 390px);
   }
 
   .info-panel,
@@ -1319,15 +1321,33 @@ body::-webkit-scrollbar-thumb {
   .demo-shell {
     grid-template-columns: 1fr;
   }
+
+  .stage-vignette {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(3, 5, 10, 0.96) 0%,
+        rgba(3, 5, 10, 0.12) 20%,
+        rgba(3, 5, 10, 0.08) 72%,
+        rgba(3, 5, 10, 0.96) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(3, 5, 10, 0.84) 0%,
+        rgba(3, 5, 10, 0.04) 12%,
+        rgba(3, 5, 10, 0.04) 88%,
+        rgba(3, 5, 10, 0.82) 100%
+      );
+  }
 }
 
 @media (max-width: 760px) {
   .story {
-    height: 1540vh;
+    height: 1760vh;
   }
 
   .device-stack {
-    width: clamp(182px, 48vw, 236px);
+    width: clamp(252px, 76vw, 382px);
   }
 
   .demo-section {
@@ -1356,24 +1376,42 @@ body::-webkit-scrollbar-thumb {
   .ending-copy-inner {
     width: calc(100vw - 28px);
   }
+
+  .mobile-story-card {
+    width: calc(100vw - 14px - var(--safe-left) - var(--safe-right));
+    bottom: max(10px, calc(var(--safe-bottom) + 6px));
+  }
+
+  .mobile-story-card-inner {
+    padding: 16px 15px 14px;
+    border-radius: 24px;
+  }
+
+  .mobile-title {
+    font-size: clamp(30px, 10.4vw, 42px);
+  }
+
+  .mobile-body {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 560px) {
   .story {
-    height: 1600vh;
+    height: 1820vh;
   }
 
   .device-stack {
-    width: clamp(176px, 49vw, 220px);
+    width: clamp(250px, 78vw, 360px);
   }
 
   .mobile-story-card-inner {
-    padding: 13px 13px 12px;
+    padding: 15px 14px 13px;
     border-radius: 22px;
   }
 
   .mobile-title {
-    font-size: clamp(26px, 9vw, 34px);
+    font-size: clamp(28px, 10vw, 38px);
   }
 
   .ending-copy strong {
@@ -1383,11 +1421,11 @@ body::-webkit-scrollbar-thumb {
 
 @media (max-height: 760px) and (max-width: 980px) {
   .story {
-    height: 1680vh;
+    height: 1880vh;
   }
 
   .device-stack {
-    width: clamp(156px, 35vw, 204px);
+    width: clamp(228px, 66vw, 320px);
   }
 
   .mobile-story-card {
@@ -1396,19 +1434,19 @@ body::-webkit-scrollbar-thumb {
   }
 
   .mobile-story-card-inner {
-    padding: 11px 11px 10px;
+    padding: 13px 12px 11px;
     border-radius: 20px;
   }
 
   .mobile-body {
-    font-size: 12px;
-    line-height: 1.42;
+    font-size: 13px;
+    line-height: 1.46;
   }
 
   .mobile-detail,
   .mobile-summary {
     font-size: 10px;
-    line-height: 1.38;
+    line-height: 1.4;
   }
 
   .mobile-value-strip,
@@ -1419,7 +1457,7 @@ body::-webkit-scrollbar-thumb {
   }
 
   .mobile-step-item {
-    padding: 7px 7px 8px;
+    padding: 8px 8px 9px;
   }
 
   .mobile-pill {
