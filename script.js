@@ -167,13 +167,14 @@ const TUNE = {
   stackScaleTabletStart: 0.82,
   stackScaleTabletHero: 0.96,
 
-  mobileShowcaseScale: 1.26,
+  mobileForegroundScale: 1.14,
+  mobileForegroundScaleAlt: 1.12,
   mobileDetailScale: 0.76,
 
-  mobileShowcaseY: 32,
+  mobileForegroundY: 18,
   mobileDetailYFactor: -0.17,
 
-  mobileCardEnterY: 34,
+  mobileCardEnterY: 26,
 };
 
 const DESKTOP_PHASE = {
@@ -282,6 +283,11 @@ function renderMiniPoints(items = []) {
     .join("");
 }
 
+function setMobileCardStep(key) {
+  if (!mobileStoryCard) return;
+  mobileStoryCard.dataset.step = key || "activation";
+}
+
 function setInfoCopy(content, force = false) {
   if (!content) return;
   if (!force && currentCopyKey === content.key) return;
@@ -313,6 +319,7 @@ function setInfoCopy(content, force = false) {
     mobilePillC.textContent = content.pills?.[2] || "";
     mobileSummary.textContent = content.summary;
 
+    setMobileCardStep(content.key);
     currentCopyKey = content.key;
   };
 
@@ -364,12 +371,10 @@ function updateLayoutCache() {
   layoutCache.isTablet = w > 980 && w <= 1280;
 
   if (layoutCache.isMobile) {
-    layoutCache.stackScaleStart = TUNE.mobileShowcaseScale;
-    layoutCache.stackScaleHero = TUNE.mobileDetailScale;
-    layoutCache.stackYStart = TUNE.mobileShowcaseY;
-    layoutCache.stackYHero = Math.round(
-      window.innerHeight * TUNE.mobileDetailYFactor,
-    );
+    layoutCache.stackScaleStart = 1;
+    layoutCache.stackScaleHero = 1;
+    layoutCache.stackYStart = 0;
+    layoutCache.stackYHero = 0;
     return;
   }
 
@@ -628,49 +633,182 @@ function getMobileStepState(progress) {
   };
 }
 
-function getMobileOpacities(progress) {
-  let v1 = 0;
-  let v2 = 0;
-  let v3 = 0;
+function getMobileStepShellState(stepIndex, progress) {
+  const detailY = Math.round(window.innerHeight * TUNE.mobileDetailYFactor);
 
-  if (progress < MOBILE_PHASE.step1Cross[0]) {
-    v1 = 1;
-  } else if (progress < MOBILE_PHASE.step1Cross[1]) {
-    const t = mix01(
+  if (stepIndex === 0) {
+    const detailT = mix01(
       progress,
-      MOBILE_PHASE.step1Cross[0],
-      MOBILE_PHASE.step1Cross[1],
+      MOBILE_PHASE.step1Detail[0],
+      MOBILE_PHASE.step1Detail[1],
       easeInOutCubic,
     );
-    v1 = 1 - t;
-    v2 = t;
-  } else if (progress < MOBILE_PHASE.step2Cross[0]) {
-    v2 = 1;
-  } else if (progress < MOBILE_PHASE.step2Cross[1]) {
-    const t = mix01(
+
+    if (progress < MOBILE_PHASE.step1Cross[0]) {
+      return {
+        opacity: 1,
+        y: lerp(TUNE.mobileForegroundY, detailY, detailT),
+        scale: lerp(
+          TUNE.mobileForegroundScaleAlt,
+          TUNE.mobileDetailScale,
+          detailT,
+        ),
+      };
+    }
+
+    if (progress < MOBILE_PHASE.step1Cross[1]) {
+      const fadeT = mix01(
+        progress,
+        MOBILE_PHASE.step1Cross[0],
+        MOBILE_PHASE.step1Cross[1],
+        easeInOutCubic,
+      );
+      return {
+        opacity: 1 - fadeT,
+        y: detailY,
+        scale: TUNE.mobileDetailScale,
+      };
+    }
+
+    return {
+      opacity: 0,
+      y: detailY,
+      scale: TUNE.mobileDetailScale,
+    };
+  }
+
+  if (stepIndex === 1) {
+    if (progress < MOBILE_PHASE.step1Cross[0]) {
+      return {
+        opacity: 0,
+        y: TUNE.mobileForegroundY,
+        scale: TUNE.mobileForegroundScale,
+      };
+    }
+
+    if (progress < MOBILE_PHASE.step1Cross[1]) {
+      const fadeT = mix01(
+        progress,
+        MOBILE_PHASE.step1Cross[0],
+        MOBILE_PHASE.step1Cross[1],
+        easeInOutCubic,
+      );
+      return {
+        opacity: fadeT,
+        y: TUNE.mobileForegroundY,
+        scale: TUNE.mobileForegroundScale,
+      };
+    }
+
+    if (progress < MOBILE_PHASE.step2Detail[0]) {
+      return {
+        opacity: 1,
+        y: TUNE.mobileForegroundY,
+        scale: TUNE.mobileForegroundScale,
+      };
+    }
+
+    if (progress < MOBILE_PHASE.step2Detail[1]) {
+      const detailT = mix01(
+        progress,
+        MOBILE_PHASE.step2Detail[0],
+        MOBILE_PHASE.step2Detail[1],
+        easeInOutCubic,
+      );
+      return {
+        opacity: 1,
+        y: lerp(TUNE.mobileForegroundY, detailY, detailT),
+        scale: lerp(
+          TUNE.mobileForegroundScale,
+          TUNE.mobileDetailScale,
+          detailT,
+        ),
+      };
+    }
+
+    if (progress < MOBILE_PHASE.step2Cross[1]) {
+      const fadeT = mix01(
+        progress,
+        MOBILE_PHASE.step2Cross[0],
+        MOBILE_PHASE.step2Cross[1],
+        easeInOutCubic,
+      );
+      return {
+        opacity: 1 - fadeT,
+        y: detailY,
+        scale: TUNE.mobileDetailScale,
+      };
+    }
+
+    return {
+      opacity: 0,
+      y: detailY,
+      scale: TUNE.mobileDetailScale,
+    };
+  }
+
+  if (progress < MOBILE_PHASE.step2Cross[0]) {
+    return {
+      opacity: 0,
+      y: TUNE.mobileForegroundY,
+      scale: TUNE.mobileForegroundScale,
+    };
+  }
+
+  if (progress < MOBILE_PHASE.step2Cross[1]) {
+    const fadeT = mix01(
       progress,
       MOBILE_PHASE.step2Cross[0],
       MOBILE_PHASE.step2Cross[1],
       easeInOutCubic,
     );
-    v2 = 1 - t;
-    v3 = t;
-  } else if (progress < MOBILE_PHASE.step3Out[0]) {
-    v3 = 1;
-  } else if (progress < MOBILE_PHASE.step3Out[1]) {
-    const t = mix01(
+    return {
+      opacity: fadeT,
+      y: TUNE.mobileForegroundY,
+      scale: TUNE.mobileForegroundScale,
+    };
+  }
+
+  if (progress < MOBILE_PHASE.step3Detail[0]) {
+    return {
+      opacity: 1,
+      y: TUNE.mobileForegroundY,
+      scale: TUNE.mobileForegroundScale,
+    };
+  }
+
+  if (progress < MOBILE_PHASE.step3Detail[1]) {
+    const detailT = mix01(
+      progress,
+      MOBILE_PHASE.step3Detail[0],
+      MOBILE_PHASE.step3Detail[1],
+      easeInOutCubic,
+    );
+    return {
+      opacity: 1,
+      y: lerp(TUNE.mobileForegroundY, detailY, detailT),
+      scale: lerp(TUNE.mobileForegroundScale, TUNE.mobileDetailScale, detailT),
+    };
+  }
+
+  if (progress < MOBILE_PHASE.step3Out[1]) {
+    const fadeT = mix01(
       progress,
       MOBILE_PHASE.step3Out[0],
       MOBILE_PHASE.step3Out[1],
       easeInOutCubic,
     );
-    v3 = 1 - t;
+    return {
+      opacity: 1 - fadeT,
+      y: detailY,
+      scale: TUNE.mobileDetailScale,
+    };
   }
 
   return {
-    v1: clamp(v1, 0, 1),
-    v2: clamp(v2, 0, 1),
-    v3: clamp(v3, 0, 1),
+    opacity: 0,
+    y: detailY,
+    scale: TUNE.mobileDetailScale,
   };
 }
 
@@ -753,25 +891,19 @@ function manageVideoActivity(progress) {
   }
 
   if (layoutCache.isMobile) {
-    const activeIndex = getDominantStep(progress);
+    const s1 = getMobileStepShellState(0, progress);
+    const s2 = getMobileStepShellState(1, progress);
+    const s3 = getMobileStepShellState(2, progress);
 
-    if (activeIndex === 0) {
-      ensureAmbientPlayback(video1);
-      pauseVideo(video2);
-      pauseVideo(video3);
-      return;
-    }
+    if (s1.opacity > 0.02) ensureAmbientPlayback(video1);
+    else pauseVideo(video1);
 
-    if (activeIndex === 1) {
-      pauseVideo(video1);
-      ensureAmbientPlayback(video2);
-      pauseVideo(video3);
-      return;
-    }
+    if (s2.opacity > 0.02) ensureAmbientPlayback(video2);
+    else pauseVideo(video2);
 
-    pauseVideo(video1);
-    pauseVideo(video2);
-    ensureAmbientPlayback(video3);
+    if (s3.opacity > 0.02) ensureAmbientPlayback(video3);
+    else pauseVideo(video3);
+
     return;
   }
 
@@ -920,40 +1052,46 @@ function renderDesktop(progress) {
 
 function renderMobile(progress) {
   const mobileState = getMobileStepState(progress);
-  const opacities = getMobileOpacities(progress);
 
-  setOpacity(plateV1, opacities.v1);
-  setOpacity(phonePlate, opacities.v2);
-  setOpacity(plateV3, opacities.v3);
+  deviceStack.style.transform = "translate3d(-50%, -50%, 0) scale(1)";
 
-  const haloOpacity = Math.max(opacities.v1, opacities.v2, opacities.v3) * 0.24;
+  const shell1 = getMobileStepShellState(0, progress);
+  const shell2 = getMobileStepShellState(1, progress);
+  const shell3 = getMobileStepShellState(2, progress);
+
+  setOpacity(plateV1, shell1.opacity);
+  setOpacity(phonePlate, shell2.opacity);
+  setOpacity(plateV3, shell3.opacity);
+
+  setVisibility(plateV1, shell1.opacity > 0.01);
+  setVisibility(phonePlate, shell2.opacity > 0.01);
+  setVisibility(plateV3, shell3.opacity > 0.01);
+
+  setTransform(plateV1, 0, shell1.y, shell1.scale);
+  setTransform(phonePlate, 0, shell2.y, shell2.scale);
+  setTransform(plateV3, 0, shell3.y, shell3.scale);
+
+  const haloOpacity = Math.max(
+    shell1.opacity * 0.16,
+    shell2.opacity * 0.24,
+    shell3.opacity * 0.24,
+  );
+  const haloScale =
+    shell3.opacity > shell2.opacity && shell3.opacity > shell1.opacity
+      ? shell3.scale + 0.035
+      : shell2.opacity > shell1.opacity
+        ? shell2.scale + 0.035
+        : shell1.scale + 0.03;
+  const haloY =
+    shell3.opacity > shell2.opacity && shell3.opacity > shell1.opacity
+      ? shell3.y
+      : shell2.opacity > shell1.opacity
+        ? shell2.y
+        : shell1.y;
+
   setOpacity(phoneHalo, haloOpacity);
-
-  setVisibility(plateV1, opacities.v1 > 0.01);
-  setVisibility(phonePlate, opacities.v2 > 0.01);
-  setVisibility(plateV3, opacities.v3 > 0.01);
   setVisibility(phoneHalo, haloOpacity > 0.01);
-
-  setTransform(plateV1, 0, 0, 1);
-  setTransform(phonePlate, 0, 0, 1);
-  setTransform(plateV3, 0, 0, 1);
-  setTransform(phoneHalo, 0, 0, 1.04);
-
-  const detailT = mobileState.detailT;
-  const deviceScale = lerp(
-    TUNE.mobileShowcaseScale,
-    TUNE.mobileDetailScale,
-    detailT,
-  );
-  const deviceY = lerp(
-    TUNE.mobileShowcaseY,
-    Math.round(window.innerHeight * TUNE.mobileDetailYFactor),
-    detailT,
-  );
-
-  deviceStack.style.transform = `translate3d(-50%, calc(-50% + ${deviceY.toFixed(
-    3,
-  )}px), 0) scale(${deviceScale.toFixed(5)})`;
+  setTransform(phoneHalo, 0, haloY, haloScale);
 
   const v1MobileT = mix01(
     progress,
@@ -1004,9 +1142,12 @@ function renderMobile(progress) {
   });
 
   const heroFade = 1 - mix01(progress, 0.05, 0.14, easeInOutCubic);
+
+  const cardReveal = clamp(mobileState.detailT, 0, 1);
   const cardOpacity =
-    detailT * (1 - mobileState.crossToNext) * (1 - mobileState.endingT);
-  const cardTranslateY = lerp(TUNE.mobileCardEnterY, 0, detailT);
+    cardReveal * (1 - mobileState.crossToNext) * (1 - mobileState.endingT);
+  const cardTranslateY = lerp(TUNE.mobileCardEnterY, 0, cardReveal);
+
   const endingIn = mobileState.endingT;
 
   setOpacity(heroCopy, heroFade * (1 - endingIn * 0.8));
@@ -1022,17 +1163,21 @@ function renderMobile(progress) {
     mix01(progress, 0.02, 0.12, easeOutCubic),
   ).toFixed(3)}px, 0)`;
 
-  mobileStoryCard.style.transform = `translate3d(-50%, ${cardTranslateY.toFixed(3)}px, 0)`;
+  const cardX = mobileState.step === 1 ? 4 : mobileState.step === 2 ? -3 : 0;
+
+  mobileStoryCard.style.transform = `translate3d(calc(-50% + ${cardX.toFixed(
+    3,
+  )}px), ${cardTranslateY.toFixed(3)}px, 0)`;
 
   endingCopy.style.transform = `translate3d(0, ${lerp(18, 0, endingIn).toFixed(
     3,
   )}px, 0) scale(${lerp(0.986, 1, endingIn).toFixed(4)})`;
 
-  if (mobileState.step === 0) {
+  if (shell1.opacity >= shell2.opacity && shell1.opacity >= shell3.opacity) {
     plateV1.style.zIndex = "4";
     phonePlate.style.zIndex = "2";
     plateV3.style.zIndex = "1";
-  } else if (mobileState.step === 1) {
+  } else if (shell2.opacity >= shell3.opacity) {
     plateV1.style.zIndex = "1";
     phonePlate.style.zIndex = "4";
     plateV3.style.zIndex = "2";
