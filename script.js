@@ -29,6 +29,7 @@ const endingCopy = document.getElementById("endingCopy");
 const scrollIndicator = document.getElementById("scrollIndicator");
 const infoPanel = document.getElementById("infoPanel");
 const processPanel = document.getElementById("processPanel");
+const mobileStoryCard = document.getElementById("mobileStoryCard");
 
 const infoKicker = document.getElementById("infoKicker");
 const infoLeadline = document.getElementById("infoLeadline");
@@ -47,10 +48,27 @@ const miniPoints = document.getElementById("miniPoints");
 const infoCopyMotion = document.getElementById("infoCopyMotion");
 const processSummaryMotion = document.getElementById("processSummaryMotion");
 
+const mobileCopyMotion = document.getElementById("mobileCopyMotion");
+const mobileKicker = document.getElementById("mobileKicker");
+const mobileTag = document.getElementById("mobileTag");
+const mobileLeadline = document.getElementById("mobileLeadline");
+const mobileTitle = document.getElementById("mobileTitle");
+const mobileBody = document.getElementById("mobileBody");
+const mobileDetail = document.getElementById("mobileDetail");
+const mobilePillA = document.getElementById("mobilePillA");
+const mobilePillB = document.getElementById("mobilePillB");
+const mobilePillC = document.getElementById("mobilePillC");
+const mobileSummary = document.getElementById("mobileSummary");
+
 const progressFill = document.getElementById("progressFill");
+const mobileProgressFill = document.getElementById("mobileProgressFill");
+
 const step1 = document.getElementById("step1");
 const step2 = document.getElementById("step2");
 const step3 = document.getElementById("step3");
+const mobileStep1 = document.getElementById("mobileStep1");
+const mobileStep2 = document.getElementById("mobileStep2");
+const mobileStep3 = document.getElementById("mobileStep3");
 
 const plateV1 = document.getElementById("plateV1");
 const plateV3 = document.getElementById("plateV3");
@@ -143,8 +161,8 @@ const TUNE = {
   stackYTabletStart: 74,
   stackYTabletHero: 6,
 
-  stackYMobileStart: 92,
-  stackYMobileHero: 28,
+  stackYMobileStart: 38,
+  stackYMobileHero: -32,
 
   stackScaleDesktopStart: 0.84,
   stackScaleDesktopHero: 1.0,
@@ -152,8 +170,8 @@ const TUNE = {
   stackScaleTabletStart: 0.82,
   stackScaleTabletHero: 0.96,
 
-  stackScaleMobileStart: 0.82,
-  stackScaleMobileHero: 0.92,
+  stackScaleMobileStart: 0.9,
+  stackScaleMobileHero: 1.0,
 };
 
 const PHASE = {
@@ -212,7 +230,11 @@ function setVisibility(el, visible) {
 
 function setActiveStep(activeIndex) {
   [step1, step2, step3].forEach((step, index) => {
-    step.classList.toggle("is-active", index === activeIndex);
+    step?.classList.toggle("is-active", index === activeIndex);
+  });
+
+  [mobileStep1, mobileStep2, mobileStep3].forEach((step, index) => {
+    step?.classList.toggle("is-active", index === activeIndex);
   });
 }
 
@@ -258,6 +280,18 @@ function setInfoCopy(content, force = false) {
 
     processSummary.textContent = content.summary;
     renderMiniPoints(content.miniPoints || []);
+
+    mobileKicker.textContent = content.kicker;
+    mobileTag.textContent = content.tag;
+    mobileLeadline.textContent = content.leadline;
+    mobileTitle.textContent = content.title;
+    mobileBody.textContent = content.body;
+    mobileDetail.textContent = content.detail;
+    mobilePillA.textContent = content.pills?.[0] || "";
+    mobilePillB.textContent = content.pills?.[1] || "";
+    mobilePillC.textContent = content.pills?.[2] || "";
+    mobileSummary.textContent = content.summary;
+
     currentCopyKey = content.key;
   };
 
@@ -266,7 +300,7 @@ function setInfoCopy(content, force = false) {
     return;
   }
 
-  animateSwap([infoCopyMotion, processSummaryMotion], apply);
+  animateSwap([infoCopyMotion, processSummaryMotion, mobileCopyMotion], apply);
 }
 
 function ensureAmbientPlayback(video) {
@@ -293,11 +327,11 @@ function updateStoryHeight() {
   const h = window.innerHeight;
   let value = 1180;
 
-  if (w <= 560) value = 1580;
+  if (w <= 560) value = 1560;
   else if (w <= 760) value = 1500;
-  else if (w <= 980) value = 1360;
+  else if (w <= 980) value = 1420;
 
-  if (w <= 980 && h <= 760) value += 70;
+  if (w <= 980 && h <= 760) value += 100;
 
   story.style.height = `${value}vh`;
 }
@@ -486,6 +520,7 @@ function updateCopyAndProgress(progress) {
         : lerp(74, 100, mix01(progress, 0.72, 0.95, easeOutCubic));
 
   progressFill.style.width = `${fillVisual.toFixed(2)}%`;
+  mobileProgressFill.style.width = `${fillVisual.toFixed(2)}%`;
 }
 
 function manageVideoActivity(progress) {
@@ -629,6 +664,7 @@ function renderScene(progress) {
 
   const leftPanelIn = mix01(progress, 0.06, 0.14, easeOutCubic);
   const rightPanelIn = mix01(progress, 0.09, 0.17, easeOutCubic);
+  const mobileCardIn = mix01(progress, 0.08, 0.16, easeOutCubic);
   const panelsFadeForEnding = 1 - mix01(progress, 0.88, 0.925, easeOutCubic);
 
   const endingIn = mix01(
@@ -642,6 +678,7 @@ function renderScene(progress) {
   setOpacity(scrollIndicator, scrollFade);
   setOpacity(infoPanel, leftPanelIn * panelsFadeForEnding);
   setOpacity(processPanel, rightPanelIn * panelsFadeForEnding);
+  setOpacity(mobileStoryCard, mobileCardIn * panelsFadeForEnding);
   setOpacity(endingCopy, endingIn);
 
   heroCopy.style.transform = `translate3d(-50%, ${lerp(
@@ -651,8 +688,7 @@ function renderScene(progress) {
   ).toFixed(3)}px, 0)`;
 
   if (window.innerWidth <= 980) {
-    infoPanel.style.transform = `translate3d(-50%, ${lerp(20, 0, leftPanelIn).toFixed(3)}px, 0)`;
-    processPanel.style.transform = `translate3d(-50%, ${lerp(18, 0, rightPanelIn).toFixed(3)}px, 0)`;
+    mobileStoryCard.style.transform = `translate3d(-50%, ${lerp(18, 0, mobileCardIn).toFixed(3)}px, 0)`;
   } else {
     infoPanel.style.transform = `translate3d(${lerp(-26, 0, leftPanelIn).toFixed(3)}px, -50%, 0)`;
     processPanel.style.transform = `translate3d(${lerp(26, 0, rightPanelIn).toFixed(3)}px, -50%, 0)`;
