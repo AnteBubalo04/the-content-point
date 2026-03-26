@@ -10,7 +10,6 @@ const invLerp = (value, min, max) => {
 
 const easeInOutCubic = (t) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
@@ -27,6 +26,10 @@ const scrollIndicator = document.getElementById("scrollIndicator");
 const infoPanel = document.getElementById("infoPanel");
 const processPanel = document.getElementById("processPanel");
 const mobileStoryCard = document.getElementById("mobileStoryCard");
+const langToggle = document.getElementById("langToggle");
+
+const heroBadge = document.getElementById("heroBadge");
+const heroTech = document.getElementById("heroTech");
 
 const infoKicker = document.getElementById("infoKicker");
 const infoLeadline = document.getElementById("infoLeadline");
@@ -39,6 +42,8 @@ const infoTag = document.getElementById("infoTag");
 const infoPillA = document.getElementById("infoPillA");
 const infoPillB = document.getElementById("infoPillB");
 const infoPillC = document.getElementById("infoPillC");
+
+const processSummaryLabel = document.getElementById("processSummaryLabel");
 const processSummary = document.getElementById("processSummary");
 const miniPoints = document.getElementById("miniPoints");
 
@@ -55,6 +60,7 @@ const mobileDetail = document.getElementById("mobileDetail");
 const mobilePillA = document.getElementById("mobilePillA");
 const mobilePillB = document.getElementById("mobilePillB");
 const mobilePillC = document.getElementById("mobilePillC");
+const mobileSummaryLabel = document.getElementById("mobileSummaryLabel");
 const mobileSummary = document.getElementById("mobileSummary");
 
 const progressFill = document.getElementById("progressFill");
@@ -63,9 +69,42 @@ const mobileProgressFill = document.getElementById("mobileProgressFill");
 const step1 = document.getElementById("step1");
 const step2 = document.getElementById("step2");
 const step3 = document.getElementById("step3");
+const stepLabel1 = document.getElementById("stepLabel1");
+const stepLabel2 = document.getElementById("stepLabel2");
+const stepLabel3 = document.getElementById("stepLabel3");
+
 const mobileStep1 = document.getElementById("mobileStep1");
 const mobileStep2 = document.getElementById("mobileStep2");
 const mobileStep3 = document.getElementById("mobileStep3");
+const mobileStepLabel1 = document.getElementById("mobileStepLabel1");
+const mobileStepLabel2 = document.getElementById("mobileStepLabel2");
+const mobileStepLabel3 = document.getElementById("mobileStepLabel3");
+
+const endingOverline = document.getElementById("endingOverline");
+const endingStrong = document.getElementById("endingStrong");
+const endingBody = document.getElementById("endingBody");
+const scrollIndicatorText = document.getElementById("scrollIndicatorText");
+
+const demoKicker = document.getElementById("demoKicker");
+const demoTitle = document.getElementById("demoTitle");
+const demoLead = document.getElementById("demoLead");
+const demoHighlightTitle1 = document.getElementById("demoHighlightTitle1");
+const demoHighlightTitle2 = document.getElementById("demoHighlightTitle2");
+const demoHighlightTitle3 = document.getElementById("demoHighlightTitle3");
+const demoHighlightText1 = document.getElementById("demoHighlightText1");
+const demoHighlightText2 = document.getElementById("demoHighlightText2");
+const demoHighlightText3 = document.getElementById("demoHighlightText3");
+
+const formLabelName = document.getElementById("formLabelName");
+const formLabelEmail = document.getElementById("formLabelEmail");
+const formLabelCompany = document.getElementById("formLabelCompany");
+const formLabelMessage = document.getElementById("formLabelMessage");
+const formInputName = document.getElementById("formInputName");
+const formInputEmail = document.getElementById("formInputEmail");
+const formInputCompany = document.getElementById("formInputCompany");
+const formInputMessage = document.getElementById("formInputMessage");
+const demoSubmit = document.getElementById("demoSubmit");
+const demoSubmitText = document.getElementById("demoSubmitText");
 
 const plateV1 = document.getElementById("plateV1");
 const plateV3 = document.getElementById("plateV3");
@@ -80,10 +119,17 @@ const video1 = document.getElementById("video1");
 const video2 = document.getElementById("video2");
 const video3 = document.getElementById("video3");
 
-const STORY_STATION_COUNT = 8;
-const GLOBAL_DEMO_INDEX = 8;
+const metaDescription = document.querySelector('meta[name="description"]');
 
-const STORY_STATE_KEYS = [
+const DESKTOP_STORY_STATE_KEYS = [
+  "hero",
+  "v1Focus",
+  "v2Focus",
+  "v3Focus",
+  "ending",
+];
+
+const MOBILE_STORY_STATE_KEYS = [
   "hero",
   "v1Focus",
   "v1Detail",
@@ -94,10 +140,6 @@ const STORY_STATE_KEYS = [
   "ending",
 ];
 
-const prefersTouch =
-  window.matchMedia("(pointer: coarse)").matches ||
-  navigator.maxTouchPoints > 0;
-
 const TUNE = {
   scrollSmoothing: prefersReducedMotion ? 40 : 9.2,
   snapDurationDesktop: 980,
@@ -105,55 +147,209 @@ const TUNE = {
   snapCooldown: 180,
   touchThreshold: 18,
   wheelThreshold: 4,
+  copySwapDelay: prefersReducedMotion ? 0 : 120,
 };
 
-const COPY = {
-  activation: {
-    key: "activation",
-    kicker: "Step 01",
-    leadline: "Grab attention and turn it into action.",
-    title: "Scan. Start. Join.",
-    body: "One quick scan takes guests straight into the experience.",
-    detail:
-      "Fast to launch, easy to understand and simple to use across venues, campaigns and offers.",
-    implementation:
-      "Demo branding is illustrative only. In production, visuals, CTA, tags and destination link are fully replaced with the client’s own brand system.",
-    tag: "Brand-ready",
-    pills: ["High attention", "Instant entry", "Low friction"],
-    miniPoints: ["Physical trigger", "QR entry", "Clear CTA"],
-    summary:
-      "A real-world touchpoint captures attention and starts the journey instantly.",
+const I18N = {
+  en: {
+    docTitle: "The Content Point — Premium Experience Showcase",
+    metaDescription:
+      "A premium scroll-driven showcase of guest activation, branded content creation, and seamless delivery.",
+    langButton: "HR",
+    langAria: "Prebaci na hrvatski",
+    heroBadge: "Premium guest conversion system",
+    heroTech: "Customer Technology",
+    processSummaryLabel: "System logic",
+    mobileSummaryLabel: "System logic",
+    scroll: "Scroll",
+    endingOverline: "Guest journey complete",
+    endingStrong: "Your guest. Your choice.",
+    endingBody:
+      "Turn real guest moments into branded content, shares, clicks and measurable business results.",
+    steps: ["Activation", "Creation", "Delivery"],
+    demoKicker: "Next step",
+    demoTitle: "Book a Demo",
+    demoLead:
+      "See the full flow live — guest activation, branded content creation, instant delivery and the conversion layer that drives real business outcomes.",
+    demoHighlights: [
+      {
+        title: "Activation",
+        text: "Physical trigger, QR entry and a frictionless start",
+      },
+      {
+        title: "Creation",
+        text: "Your branding, your motion language and your content output",
+      },
+      {
+        title: "Delivery",
+        text: "Sharing, CTA, booking logic, reward flow and tracking options",
+      },
+    ],
+    form: {
+      name: "Name",
+      email: "Email",
+      company: "Company",
+      message: "Message",
+      namePlaceholder: "Your full name",
+      emailPlaceholder: "you@company.com",
+      companyPlaceholder: "Company name",
+      messagePlaceholder: "Tell us what you want to see in the demo",
+      submit: "Book a Demo",
+    },
+    copy: {
+      activation: {
+        key: "activation",
+        kicker: "Step 01",
+        leadline: "Grab attention and turn it into action.",
+        title: "Scan. Start. Join.",
+        body: "One quick scan takes guests straight into the experience.",
+        detail:
+          "Fast to launch, easy to understand and simple to use across venues, campaigns and offers.",
+        implementation:
+          "Demo branding is illustrative only. In production, visuals, CTA, tags and destination link are fully replaced with the client’s own brand system.",
+        tag: "Brand-ready",
+        pills: ["High attention", "Instant entry", "Low friction"],
+        miniPoints: ["Physical trigger", "QR entry", "Clear CTA"],
+        summary:
+          "A real-world touchpoint captures attention and starts the journey instantly.",
+      },
+      creation: {
+        key: "creation",
+        kicker: "Step 02",
+        leadline: "Turn the guest moment into branded content.",
+        title: "Your brand, built into every output.",
+        body: "Each captured moment becomes a polished asset shaped by your visual identity.",
+        detail:
+          "Overlay, motion, styling and tags adapt to the venue, campaign or client brand.",
+        implementation:
+          "Everything shown in the demo is replaceable — animation, naming, hashtags, CTA and visual treatment become fully client-specific.",
+        tag: "Fully custom",
+        pills: ["Branded output", "Share-ready", "Premium look"],
+        miniPoints: ["Custom overlay", "Campaign tags", "Polished asset"],
+        summary:
+          "The output feels premium, branded and instantly worth sharing.",
+      },
+      delivery: {
+        key: "delivery",
+        kicker: "Step 03",
+        leadline: "Move content into clicks, shares and action.",
+        title: "Share. Click. Convert.",
+        body: "The finished content is delivered instantly for download, sharing and the next business step.",
+        detail:
+          "This is where the experience drives bookings, traffic, offers, referrals or repeat visits.",
+        implementation:
+          "The final link, reward logic and tracking layer can be adapted to the business model — from bookings and promos to referral-driven growth.",
+        tag: "Conversion layer",
+        pills: ["Business CTA", "Reward-ready", "Trackable"],
+        miniPoints: ["Direct link", "Reward logic", "Measured outcomes"],
+        summary:
+          "The final layer turns branded content into measurable intent and business results.",
+      },
+    },
   },
-  creation: {
-    key: "creation",
-    kicker: "Step 02",
-    leadline: "Turn the guest moment into branded content.",
-    title: "Your brand, built into every output.",
-    body: "Each captured moment becomes a polished asset shaped by your visual identity.",
-    detail:
-      "Overlay, motion, styling and tags adapt to the venue, campaign or client brand.",
-    implementation:
-      "Everything shown in the demo is replaceable — animation, naming, hashtags, CTA and visual treatment become fully client-specific.",
-    tag: "Fully custom",
-    pills: ["Branded output", "Share-ready", "Premium look"],
-    miniPoints: ["Custom overlay", "Campaign tags", "Polished asset"],
-    summary: "The output feels premium, branded and instantly worth sharing.",
-  },
-  delivery: {
-    key: "delivery",
-    kicker: "Step 03",
-    leadline: "Move content into clicks, shares and action.",
-    title: "Share. Click. Convert.",
-    body: "The finished content is delivered instantly for download, sharing and the next business step.",
-    detail:
-      "This is where the experience drives bookings, traffic, offers, referrals or repeat visits.",
-    implementation:
-      "The final link, reward logic and tracking layer can be adapted to the business model — from bookings and promos to referral-driven growth.",
-    tag: "Conversion layer",
-    pills: ["Business CTA", "Reward-ready", "Trackable"],
-    miniPoints: ["Direct link", "Reward logic", "Measured outcomes"],
-    summary:
-      "The final layer turns branded content into measurable intent and business results.",
+  hr: {
+    docTitle: "The Content Point — Premium Experience Showcase",
+    metaDescription:
+      "Premium prikaz iskustva vođen skrolanjem za aktivaciju gostiju, izradu brendiranog sadržaja i trenutnu isporuku.",
+    langButton: "EN",
+    langAria: "Switch to English",
+    heroBadge: "Premium sustav za konverziju gostiju",
+    heroTech: "Korisnička tehnologija",
+    processSummaryLabel: "Logika sustava",
+    mobileSummaryLabel: "Logika sustava",
+    scroll: "Skrolaj",
+    endingOverline: "Putovanje gosta završeno",
+    endingStrong: "Vaš gost. Vaš izbor.",
+    endingBody:
+      "Pretvorite stvarne trenutke gostiju u brendirani sadržaj, dijeljenja, klikove i mjerljive poslovne rezultate.",
+    steps: ["Aktivacija", "Izrada", "Isporuka"],
+    demoKicker: "Sljedeći korak",
+    demoTitle: "Rezervirajte demo",
+    demoLead:
+      "Pogledajte cijeli tijek uživo — aktivaciju gosta, izradu brendiranog sadržaja, trenutnu isporuku i konverzijski sloj koji donosi stvarne poslovne rezultate.",
+    demoHighlights: [
+      {
+        title: "Aktivacija",
+        text: "Fizički okidač, ulaz preko QR koda i početak bez trenja",
+      },
+      {
+        title: "Izrada",
+        text: "Vaš branding, vaš jezik pokreta i vaš izlazni sadržaj",
+      },
+      {
+        title: "Isporuka",
+        text: "Dijeljenje, CTA, logika rezervacija, tok nagrada i opcije praćenja",
+      },
+    ],
+    form: {
+      name: "Ime",
+      email: "Email",
+      company: "Tvrtka",
+      message: "Poruka",
+      namePlaceholder: "Vaše ime i prezime",
+      emailPlaceholder: "vi@tvrtka.com",
+      companyPlaceholder: "Naziv tvrtke",
+      messagePlaceholder: "Recite nam što želite vidjeti u demu",
+      submit: "Rezervirajte demo",
+    },
+    copy: {
+      activation: {
+        key: "activation",
+        kicker: "Korak 01",
+        leadline: "Privuci pažnju i pretvori je u akciju.",
+        title: "Skeniraj. Pokreni. Uključi se.",
+        body: "Jedno brzo skeniranje vodi gosta ravno u iskustvo.",
+        detail:
+          "Brzo za pokretanje, lako za razumjeti i jednostavno za korištenje kroz prostore, kampanje i ponude.",
+        implementation:
+          "Demo branding služi samo kao ilustracija. U produkciji se vizuali, CTA, oznake i odredišni link u potpunosti zamjenjuju brend sustavom klijenta.",
+        tag: "Spremno za brend",
+        pills: ["Velika pažnja", "Trenutan ulaz", "Bez trenja"],
+        miniPoints: ["Fizički okidač", "QR ulaz", "Jasan CTA"],
+        summary:
+          "Stvarna fizička točka kontakta privlači pažnju i odmah pokreće putovanje.",
+      },
+      creation: {
+        key: "creation",
+        kicker: "Korak 02",
+        leadline: "Pretvori trenutak gosta u brendirani sadržaj.",
+        title: "Vaš brend ugrađen u svaki rezultat.",
+        body: "Svaki zabilježeni trenutak postaje dorađen vizual oblikovan vašim identitetom.",
+        detail:
+          "Overlay, animacija, stil i oznake prilagođavaju se prostoru, kampanji ili brendu klijenta.",
+        implementation:
+          "Sve prikazano u demu je zamjenjivo — animacija, nazivi, hashtagovi, CTA i vizualni tretman postaju potpuno specifični za klijenta.",
+        tag: "Potpuno prilagodljivo",
+        pills: [
+          "Brendirani rezultat",
+          "Spremno za dijeljenje",
+          "Premium izgled",
+        ],
+        miniPoints: [
+          "Prilagođeni overlay",
+          "Oznake kampanje",
+          "Dorađen sadržaj",
+        ],
+        summary:
+          "Rezultat djeluje premium, brendirano i odmah vrijedno dijeljenja.",
+      },
+      delivery: {
+        key: "delivery",
+        kicker: "Korak 03",
+        leadline: "Pretvori sadržaj u klikove, dijeljenja i akciju.",
+        title: "Podijeli. Klikni. Konvertiraj.",
+        body: "Gotov sadržaj isporučuje se odmah za preuzimanje, dijeljenje i sljedeći poslovni korak.",
+        detail:
+          "Ovdje iskustvo pokreće rezervacije, promet, ponude, preporuke ili ponovne dolaske.",
+        implementation:
+          "Završni link, logika nagrađivanja i sloj praćenja mogu se prilagoditi poslovnom modelu — od rezervacija i promocija do rasta temeljenog na preporukama.",
+        tag: "Konverzijski sloj",
+        pills: ["Poslovni CTA", "Spremno za nagrade", "Mjerljivo"],
+        miniPoints: ["Izravni link", "Logika nagrada", "Mjerljivi rezultati"],
+        summary:
+          "Završni sloj pretvara brendirani sadržaj u mjerljivu namjeru i poslovne rezultate.",
+      },
+    },
   },
 };
 
@@ -170,11 +366,9 @@ const CROP = {
 const DESKTOP_POSES = {
   hero: { y: 42, scale: 0.88 },
   v1Focus: { y: -2, scale: 1.04 },
-  v1Detail: { y: -118, scale: 0.79 },
   v2Focus: { y: -2, scale: 1.04 },
-  v2Detail: { y: -118, scale: 0.79 },
   v3Focus: { y: -2, scale: 1.04 },
-  v3Detail: { y: -118, scale: 0.79 },
+  ending: { y: -2, scale: 1.04 },
 };
 
 const MOBILE_POSES = {
@@ -185,6 +379,7 @@ const MOBILE_POSES = {
   v2Detail: { y: -94, scale: 0.81 },
   v3Focus: { y: 14, scale: 1.08 },
   v3Detail: { y: -94, scale: 0.81 },
+  ending: { y: -94, scale: 0.81 },
 };
 
 const state = {
@@ -193,9 +388,14 @@ const state = {
   lastTime: performance.now(),
   targetProgress: 0,
   smoothProgress: 0,
-  currentCopyKey: "",
-  lastRenderKey: "",
   sceneVisible: true,
+  currentLanguage: "en",
+  currentCopySignature: "",
+  pendingCopySignature: "",
+  copySwapTimer: 0,
+  isCopyAnimating: false,
+  lastRenderKey: "",
+  lastLogicalCopyKey: "",
 };
 
 const snapState = {
@@ -218,6 +418,28 @@ const snapState = {
 const layoutCache = {
   isMobile: false,
 };
+
+function getStoryStateKeys() {
+  return layoutCache.isMobile
+    ? MOBILE_STORY_STATE_KEYS
+    : DESKTOP_STORY_STATE_KEYS;
+}
+
+function getStoryStationCount() {
+  return getStoryStateKeys().length;
+}
+
+function getGlobalDemoIndex() {
+  return getStoryStationCount();
+}
+
+function getLocalePack() {
+  return I18N[state.currentLanguage] || I18N.en;
+}
+
+function getCopySet() {
+  return getLocalePack().copy;
+}
 
 function setTransform(el, x, y, scale) {
   if (!el) return;
@@ -337,20 +559,39 @@ function getVideo3CropRect(source) {
   };
 }
 
-function animateSwap(nodes, onMidpoint) {
+function getCopyAnimationNodes() {
+  return layoutCache.isMobile
+    ? [mobileCopyMotion]
+    : [infoCopyMotion, processSummaryMotion];
+}
+
+function clearCopySwapTimer() {
+  if (state.copySwapTimer) {
+    clearTimeout(state.copySwapTimer);
+    state.copySwapTimer = 0;
+  }
+}
+
+function animateSwap(nodes, onMidpoint, onComplete) {
   if (prefersReducedMotion) {
     onMidpoint();
+    onComplete?.();
     return;
   }
 
   nodes.forEach((node) => node?.classList.add("is-changing"));
 
-  window.setTimeout(() => {
+  state.copySwapTimer = window.setTimeout(() => {
     onMidpoint();
+
     requestAnimationFrame(() => {
       nodes.forEach((node) => node?.classList.remove("is-changing"));
+
+      window.setTimeout(() => {
+        onComplete?.();
+      }, 220);
     });
-  }, 160);
+  }, TUNE.copySwapDelay);
 }
 
 function renderMiniPoints(items = []) {
@@ -375,47 +616,182 @@ function setActiveStep(activeIndex) {
   });
 }
 
-function setInfoCopy(content, force = false) {
+function applyGlobalLanguage() {
+  const locale = getLocalePack();
+
+  document.documentElement.lang = state.currentLanguage === "hr" ? "hr" : "en";
+  document.title = locale.docTitle;
+
+  if (metaDescription) {
+    metaDescription.setAttribute("content", locale.metaDescription);
+  }
+
+  if (langToggle) {
+    langToggle.textContent = locale.langButton;
+    langToggle.setAttribute("aria-label", locale.langAria);
+    langToggle.setAttribute("title", locale.langAria);
+  }
+
+  if (heroBadge) heroBadge.textContent = locale.heroBadge;
+  if (heroTech) heroTech.textContent = locale.heroTech;
+
+  if (processSummaryLabel)
+    processSummaryLabel.textContent = locale.processSummaryLabel;
+  if (mobileSummaryLabel)
+    mobileSummaryLabel.textContent = locale.mobileSummaryLabel;
+
+  if (stepLabel1) stepLabel1.textContent = locale.steps[0];
+  if (stepLabel2) stepLabel2.textContent = locale.steps[1];
+  if (stepLabel3) stepLabel3.textContent = locale.steps[2];
+
+  if (mobileStepLabel1) mobileStepLabel1.textContent = locale.steps[0];
+  if (mobileStepLabel2) mobileStepLabel2.textContent = locale.steps[1];
+  if (mobileStepLabel3) mobileStepLabel3.textContent = locale.steps[2];
+
+  if (endingOverline) endingOverline.textContent = locale.endingOverline;
+  if (endingStrong) endingStrong.textContent = locale.endingStrong;
+  if (endingBody) endingBody.textContent = locale.endingBody;
+
+  if (scrollIndicatorText) scrollIndicatorText.textContent = locale.scroll;
+
+  if (demoKicker) demoKicker.textContent = locale.demoKicker;
+  if (demoTitle) demoTitle.textContent = locale.demoTitle;
+  if (demoLead) demoLead.textContent = locale.demoLead;
+
+  if (demoHighlightTitle1)
+    demoHighlightTitle1.textContent = locale.demoHighlights[0].title;
+  if (demoHighlightTitle2)
+    demoHighlightTitle2.textContent = locale.demoHighlights[1].title;
+  if (demoHighlightTitle3)
+    demoHighlightTitle3.textContent = locale.demoHighlights[2].title;
+
+  if (demoHighlightText1)
+    demoHighlightText1.textContent = locale.demoHighlights[0].text;
+  if (demoHighlightText2)
+    demoHighlightText2.textContent = locale.demoHighlights[1].text;
+  if (demoHighlightText3)
+    demoHighlightText3.textContent = locale.demoHighlights[2].text;
+
+  if (formLabelName) formLabelName.textContent = locale.form.name;
+  if (formLabelEmail) formLabelEmail.textContent = locale.form.email;
+  if (formLabelCompany) formLabelCompany.textContent = locale.form.company;
+  if (formLabelMessage) formLabelMessage.textContent = locale.form.message;
+
+  if (formInputName) formInputName.placeholder = locale.form.namePlaceholder;
+  if (formInputEmail) formInputEmail.placeholder = locale.form.emailPlaceholder;
+  if (formInputCompany)
+    formInputCompany.placeholder = locale.form.companyPlaceholder;
+  if (formInputMessage)
+    formInputMessage.placeholder = locale.form.messagePlaceholder;
+
+  if (demoSubmit) demoSubmit.setAttribute("aria-label", locale.form.submit);
+  if (demoSubmitText) demoSubmitText.textContent = locale.form.submit;
+}
+
+function applyCopyToDOM(content) {
   if (!content) return;
-  if (!force && state.currentCopyKey === content.key) return;
 
-  const apply = () => {
-    infoKicker.textContent = content.kicker;
-    infoLeadline.textContent = content.leadline;
-    infoTitle.textContent = content.title;
-    infoBody.textContent = content.body;
-    infoDetail.textContent = content.detail;
-    infoImplementation.textContent = content.implementation;
-    infoTag.textContent = content.tag;
+  infoKicker.textContent = content.kicker;
+  infoLeadline.textContent = content.leadline;
+  infoTitle.textContent = content.title;
+  infoBody.textContent = content.body;
+  infoDetail.textContent = content.detail;
+  infoImplementation.textContent = content.implementation;
+  infoTag.textContent = content.tag;
 
-    infoPillA.textContent = content.pills?.[0] || "";
-    infoPillB.textContent = content.pills?.[1] || "";
-    infoPillC.textContent = content.pills?.[2] || "";
+  infoPillA.textContent = content.pills?.[0] || "";
+  infoPillB.textContent = content.pills?.[1] || "";
+  infoPillC.textContent = content.pills?.[2] || "";
 
-    processSummary.textContent = content.summary;
-    renderMiniPoints(content.miniPoints || []);
+  processSummary.textContent = content.summary;
+  renderMiniPoints(content.miniPoints || []);
 
-    mobileKicker.textContent = content.kicker;
-    mobileTag.textContent = content.tag;
-    mobileLeadline.textContent = content.leadline;
-    mobileTitle.textContent = content.title;
-    mobileBody.textContent = content.body;
-    mobileDetail.textContent = content.detail;
-    mobilePillA.textContent = content.pills?.[0] || "";
-    mobilePillB.textContent = content.pills?.[1] || "";
-    mobilePillC.textContent = content.pills?.[2] || "";
-    mobileSummary.textContent = content.summary;
+  mobileKicker.textContent = content.kicker;
+  mobileTag.textContent = content.tag;
+  mobileLeadline.textContent = content.leadline;
+  mobileTitle.textContent = content.title;
+  mobileBody.textContent = content.body;
+  mobileDetail.textContent = content.detail;
+  mobilePillA.textContent = content.pills?.[0] || "";
+  mobilePillB.textContent = content.pills?.[1] || "";
+  mobilePillC.textContent = content.pills?.[2] || "";
+  mobileSummary.textContent = content.summary;
 
-    setMobileCardStep(content.key);
-    state.currentCopyKey = content.key;
-  };
+  setMobileCardStep(content.key);
+}
 
-  if (force || prefersReducedMotion || !state.currentCopyKey) {
-    apply();
+function getCopySignature(content) {
+  return `${state.currentLanguage}:${content.key}`;
+}
+
+function flushPendingCopy() {
+  if (
+    !state.pendingCopySignature ||
+    state.pendingCopySignature === state.currentCopySignature
+  ) {
+    state.pendingCopySignature = "";
+    state.isCopyAnimating = false;
     return;
   }
 
-  animateSwap([infoCopyMotion, processSummaryMotion, mobileCopyMotion], apply);
+  const signature = state.pendingCopySignature;
+  state.pendingCopySignature = "";
+
+  const [lang, key] = signature.split(":");
+  const locale = I18N[lang] || I18N.en;
+  const content = locale.copy[key];
+
+  if (!content) {
+    state.isCopyAnimating = false;
+    return;
+  }
+
+  const finish = () => {
+    state.currentCopySignature = signature;
+    state.isCopyAnimating = false;
+
+    if (
+      state.pendingCopySignature &&
+      state.pendingCopySignature !== state.currentCopySignature
+    ) {
+      flushPendingCopy();
+    }
+  };
+
+  const apply = () => applyCopyToDOM(content);
+
+  if (prefersReducedMotion) {
+    apply();
+    finish();
+    return;
+  }
+
+  state.isCopyAnimating = true;
+  clearCopySwapTimer();
+  animateSwap(getCopyAnimationNodes(), apply, finish);
+}
+
+function setInfoCopy(content, force = false) {
+  if (!content) return;
+
+  const signature = getCopySignature(content);
+
+  if (force) {
+    clearCopySwapTimer();
+    state.pendingCopySignature = "";
+    state.isCopyAnimating = false;
+    applyCopyToDOM(content);
+    state.currentCopySignature = signature;
+    return;
+  }
+
+  if (signature === state.currentCopySignature && !state.isCopyAnimating)
+    return;
+
+  state.pendingCopySignature = signature;
+
+  if (state.isCopyAnimating) return;
+  flushPendingCopy();
 }
 
 function ensureAmbientPlayback(video) {
@@ -442,7 +818,7 @@ function updateLayoutCache() {
 }
 
 function updateStoryHeight() {
-  story.style.height = `${STORY_STATION_COUNT * 100}vh`;
+  story.style.height = `${getStoryStationCount() * 100}vh`;
 }
 
 function getStoryMetrics() {
@@ -469,8 +845,9 @@ function progressToPageY(progress) {
 }
 
 function getStoryStationPageY(index) {
-  const clamped = clamp(index, 0, STORY_STATION_COUNT - 1);
-  return progressToPageY(clamped / (STORY_STATION_COUNT - 1));
+  const count = getStoryStationCount();
+  const clamped = clamp(index, 0, count - 1);
+  return progressToPageY(clamped / (count - 1));
 }
 
 function getDemoStationPageY() {
@@ -478,7 +855,8 @@ function getDemoStationPageY() {
 }
 
 function getGlobalStationPageY(index) {
-  if (index <= STORY_STATION_COUNT - 1) {
+  const demoIndex = getGlobalDemoIndex();
+  if (index < demoIndex) {
     return getStoryStationPageY(index);
   }
   return getDemoStationPageY();
@@ -486,10 +864,11 @@ function getGlobalStationPageY(index) {
 
 function getClosestGlobalStationIndex() {
   const y = window.scrollY;
+  const maxIndex = getGlobalDemoIndex();
   let closestIndex = 0;
   let closestDistance = Infinity;
 
-  for (let i = 0; i <= GLOBAL_DEMO_INDEX; i += 1) {
+  for (let i = 0; i <= maxIndex; i += 1) {
     const stationY = getGlobalStationPageY(i);
     const distance = Math.abs(y - stationY);
     if (distance < closestDistance) {
@@ -510,16 +889,13 @@ function syncCurrentStationFromScroll() {
 function isSnapRegionActive() {
   const storyMetrics = getStoryMetrics();
   const y = window.scrollY;
-  const demoTop = getDemoStationPageY();
   const lowerBound = storyMetrics.startY - 2;
-  const upperBound = demoTop + Math.max(window.innerHeight * 0.15, 80);
-  return y >= lowerBound && y <= upperBound;
-}
 
-function isInsideStoryRegion() {
-  const storyMetrics = getStoryMetrics();
-  const y = window.scrollY;
-  return y >= storyMetrics.startY - 2 && y <= storyMetrics.endY + 2;
+  // Snap vrijedi samo unutar sticky story sekcije.
+  // Čim dođeš do kraja storyja, scroll mora biti normalan prema demo formi.
+  const upperBound = storyMetrics.endY - 2;
+
+  return y >= lowerBound && y <= upperBound;
 }
 
 function cancelSnapAnimation() {
@@ -568,7 +944,8 @@ function animateWindowScrollTo(targetY, duration = 900, onDone) {
 }
 
 function snapToIndex(index, options = {}) {
-  const clampedIndex = clamp(index, 0, GLOBAL_DEMO_INDEX);
+  const maxIndex = getGlobalDemoIndex();
+  const clampedIndex = clamp(index, 0, maxIndex);
   const targetY = getGlobalStationPageY(clampedIndex);
   const duration =
     options.duration ??
@@ -607,9 +984,10 @@ function getNextSnapIndex(direction) {
   const baseIndex = snapState.isAnimating
     ? snapState.requestedIndex
     : snapState.currentIndex;
+  const maxIndex = getGlobalDemoIndex();
 
-  if (direction > 0) return clamp(baseIndex + 1, 0, GLOBAL_DEMO_INDEX);
-  if (direction < 0) return clamp(baseIndex - 1, 0, GLOBAL_DEMO_INDEX);
+  if (direction > 0) return clamp(baseIndex + 1, 0, maxIndex);
+  if (direction < 0) return clamp(baseIndex - 1, 0, maxIndex);
   return baseIndex;
 }
 
@@ -662,15 +1040,17 @@ function primeVideo(video) {
 }
 
 function getStorySegment(progress) {
-  const scaled = clamp(progress, 0, 1) * (STORY_STATION_COUNT - 1);
-  const index = clamp(Math.floor(scaled), 0, STORY_STATION_COUNT - 2);
+  const keys = getStoryStateKeys();
+  const stationCount = keys.length;
+  const scaled = clamp(progress, 0, 1) * (stationCount - 1);
+  const index = clamp(Math.floor(scaled), 0, stationCount - 2);
   const local = clamp(scaled - index, 0, 1);
 
   return {
     index,
     local,
-    fromKey: STORY_STATE_KEYS[index],
-    toKey: STORY_STATE_KEYS[index + 1],
+    fromKey: keys[index],
+    toKey: keys[index + 1],
   };
 }
 
@@ -685,13 +1065,13 @@ function getStepIndexForState(key) {
   return 0;
 }
 
-function getCopyForState(key) {
-  if (key === "v1Detail") return COPY.activation;
-  if (key === "v2Detail") return COPY.creation;
-  if (key === "v3Detail") return COPY.delivery;
-  if (key === "v2Focus") return COPY.creation;
-  if (key === "v3Focus" || key === "ending") return COPY.delivery;
-  return COPY.activation;
+function getCopyForState(key, lang = state.currentLanguage) {
+  const locale = I18N[lang] || I18N.en;
+  if (key === "v1Focus" || key === "v1Detail") return locale.copy.activation;
+  if (key === "v2Focus" || key === "v2Detail") return locale.copy.creation;
+  if (key === "v3Focus" || key === "v3Detail" || key === "ending")
+    return locale.copy.delivery;
+  return locale.copy.activation;
 }
 
 function getVideoForState(key) {
@@ -765,6 +1145,7 @@ function renderVideos(segment) {
   if (sameVideo) {
     const y = lerp(poseFrom.y, poseTo.y, local);
     const scale = lerp(poseFrom.scale, poseTo.scale, local);
+
     if (fromVideo === 1) {
       v1Y = y;
       v1Scale = scale;
@@ -831,22 +1212,26 @@ function renderVideos(segment) {
   const focusT1 =
     fromKey === "hero"
       ? local
-      : fromKey === "v1Focus" && toKey === "v1Detail"
+      : fromKey === "v1Focus"
         ? 1
-        : fromKey === "v1Detail"
+        : toKey === "v1Focus"
           ? 1
-          : toKey === "v1Focus"
+          : fromKey === "v1Detail"
             ? 1
-            : 0;
+            : toKey === "v1Detail"
+              ? 1
+              : 0;
 
   const focusT2 =
-    fromKey === "v2Focus" && toKey === "v2Detail"
+    fromKey === "v2Focus"
       ? 1
-      : fromKey === "v2Detail"
+      : toKey === "v2Focus"
         ? 1
-        : toKey === "v2Focus"
+        : fromKey === "v2Detail"
           ? 1
-          : 0;
+          : toKey === "v2Detail"
+            ? 1
+            : 0;
 
   const sourceV1 = getVideoSource(video1, { width: 1080, height: 1920 });
   const sourceV2 = getVideoSource(video2, { width: 1920, height: 1080 });
@@ -884,8 +1269,33 @@ function renderVideos(segment) {
   video3.style.filter = "none";
 }
 
+function getDominantStoryState(segment) {
+  return segment.local < 0.5 ? segment.fromKey : segment.toKey;
+}
+
+function shouldShowCopyForState(key) {
+  if (layoutCache.isMobile) {
+    return (
+      key === "v1Detail" ||
+      key === "v2Focus" ||
+      key === "v2Detail" ||
+      key === "v3Focus" ||
+      key === "v3Detail" ||
+      key === "ending"
+    );
+  }
+
+  return (
+    key === "v1Focus" ||
+    key === "v2Focus" ||
+    key === "v3Focus" ||
+    key === "ending"
+  );
+}
+
 function renderTextLayers(segment) {
   const { fromKey, toKey, local } = segment;
+
   const showHero =
     (fromKey === "hero" && (toKey === "v1Focus" ? 1 - local : 1)) ||
     (toKey === "hero" ? local : 0);
@@ -894,21 +1304,29 @@ function renderTextLayers(segment) {
   const endingTo = toKey === "ending" ? 1 : 0;
   const endingOpacity = lerp(endingFrom, endingTo, local);
 
-  const detailFrom =
-    fromKey === "v1Detail" || fromKey === "v2Detail" || fromKey === "v3Detail"
-      ? 1
-      : 0;
-  const detailTo =
-    toKey === "v1Detail" || toKey === "v2Detail" || toKey === "v3Detail"
-      ? 1
-      : 0;
-  const detailOpacity = lerp(detailFrom, detailTo, local) * (1 - endingOpacity);
+  let activeInfoFrom = 0;
+  let activeInfoTo = 0;
 
-  const activeCopy =
-    detailTo > detailFrom ? getCopyForState(toKey) : getCopyForState(fromKey);
-  if (detailOpacity > 0.08) {
-    setInfoCopy(activeCopy);
+  if (layoutCache.isMobile) {
+    activeInfoFrom =
+      fromKey === "v1Detail" || fromKey === "v2Detail" || fromKey === "v3Detail"
+        ? 1
+        : 0;
+    activeInfoTo =
+      toKey === "v1Detail" || toKey === "v2Detail" || toKey === "v3Detail"
+        ? 1
+        : 0;
+  } else {
+    activeInfoFrom =
+      fromKey === "v1Focus" || fromKey === "v2Focus" || fromKey === "v3Focus"
+        ? 1
+        : 0;
+    activeInfoTo =
+      toKey === "v1Focus" || toKey === "v2Focus" || toKey === "v3Focus" ? 1 : 0;
   }
+
+  const detailOpacity =
+    lerp(activeInfoFrom, activeInfoTo, local) * (1 - endingOpacity);
 
   setOpacity(heroCopy, showHero * (1 - endingOpacity * 0.6));
   setOpacity(scrollIndicator, showHero > 0.08 ? showHero : 0);
@@ -944,17 +1362,15 @@ function renderTextLayers(segment) {
 }
 
 function updateCopyAndSteps(segment) {
-  const visibleKey = segment.local < 0.5 ? segment.fromKey : segment.toKey;
-  const content = getCopyForState(visibleKey);
-  if (
-    visibleKey === "v1Detail" ||
-    visibleKey === "v2Detail" ||
-    visibleKey === "v3Detail" ||
-    visibleKey === "v2Focus" ||
-    visibleKey === "v3Focus" ||
-    visibleKey === "ending"
-  ) {
-    setInfoCopy(content);
+  const dominantState = getDominantStoryState(segment);
+  const content = getCopyForState(dominantState);
+
+  if (shouldShowCopyForState(dominantState)) {
+    const logicalKey = `${state.currentLanguage}:${content.key}:${layoutCache.isMobile ? "m" : "d"}`;
+    if (logicalKey !== state.lastLogicalCopyKey) {
+      setInfoCopy(content);
+      state.lastLogicalCopyKey = logicalKey;
+    }
   }
 
   renderProgressUI(segment);
@@ -984,7 +1400,7 @@ function manageVideoActivity(segment) {
 }
 
 function renderScene(progress) {
-  const renderKey = `${progress.toFixed(5)}|${window.innerWidth}|${window.innerHeight}`;
+  const renderKey = `${progress.toFixed(5)}|${window.innerWidth}|${window.innerHeight}|${layoutCache.isMobile ? "m" : "d"}|${state.currentLanguage}|${state.currentCopySignature}`;
   if (renderKey === state.lastRenderKey) return;
   state.lastRenderKey = renderKey;
 
@@ -1041,6 +1457,7 @@ function requestResizeRecalc() {
     updateLayoutCache();
     updateStoryHeight();
     state.lastRenderKey = "";
+    state.lastLogicalCopyKey = "";
     renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
   });
@@ -1054,6 +1471,25 @@ function handleDirectionalSnap(direction) {
   const targetIndex = getNextSnapIndex(direction);
   snapToIndex(targetIndex);
   return true;
+}
+
+function setLanguage(nextLanguage) {
+  const safeLang = nextLanguage === "hr" ? "hr" : "en";
+  if (safeLang === state.currentLanguage) return;
+
+  state.currentLanguage = safeLang;
+  applyGlobalLanguage();
+
+  const activeSegment = getStorySegment(state.smoothProgress);
+  const content = getCopyForState(getDominantStoryState(activeSegment));
+  state.lastLogicalCopyKey = "";
+  setInfoCopy(content, true);
+  state.lastRenderKey = "";
+  renderScene(state.smoothProgress);
+}
+
+function toggleLanguage() {
+  setLanguage(state.currentLanguage === "en" ? "hr" : "en");
 }
 
 const observer = new IntersectionObserver(
@@ -1127,6 +1563,18 @@ window.addEventListener(
 window.addEventListener(
   "keydown",
   (event) => {
+    if (
+      event.target &&
+      /input|textarea|select|button/i.test(event.target.tagName)
+    ) {
+      return;
+    }
+
+    if (event.key.toLowerCase() === "l") {
+      toggleLanguage();
+      return;
+    }
+
     if (prefersReducedMotion) return;
     if (!isSnapRegionActive()) return;
 
@@ -1201,10 +1649,13 @@ window.addEventListener(
   { passive: true },
 );
 
+langToggle?.addEventListener("click", toggleLanguage);
+
 window.addEventListener("load", () => {
   updateLayoutCache();
   updateStoryHeight();
-  setInfoCopy(COPY.activation, true);
+  applyGlobalLanguage();
+  setInfoCopy(getCopySet().activation, true);
 
   primeVideo(video1);
   primeVideo(video2);
@@ -1219,6 +1670,7 @@ window.addEventListener("load", () => {
     updateLayoutCache();
     updateStoryHeight();
     state.lastRenderKey = "";
+    state.lastLogicalCopyKey = "";
     renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
   }, 180);
@@ -1243,6 +1695,7 @@ window.addEventListener("beforeunload", () => {
   cancelAnimationFrame(state.rafId);
   cancelSnapAnimation();
   observer.disconnect();
+  clearCopySwapTimer();
 
   if (snapState.wheelTimer) clearTimeout(snapState.wheelTimer);
   if (snapState.releaseSnapTimer) clearTimeout(snapState.releaseSnapTimer);

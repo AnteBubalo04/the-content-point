@@ -33,10 +33,22 @@
           <div class="stage-grid"></div>
           <div class="stage-vignette"></div>
 
+          <button
+            class="lang-toggle"
+            id="langToggle"
+            type="button"
+            aria-label="Prebaci na hrvatski"
+            title="Prebaci na hrvatski"
+          >
+            HR
+          </button>
+
           <header class="hero-copy" id="heroCopy">
-            <p class="hero-badge">Premium guest conversion system</p>
+            <p class="hero-badge" id="heroBadge">
+              Premium guest conversion system
+            </p>
             <h1>The Content Point</h1>
-            <p class="hero-tech">Customer Technology</p>
+            <p class="hero-tech" id="heroTech">Customer Technology</p>
           </header>
 
           <!-- DESKTOP LEFT PANEL -->
@@ -97,7 +109,9 @@
           >
             <div class="process-panel-inner">
               <div class="process-summary copy-anim" id="processSummaryMotion">
-                <p class="process-summary-label">System logic</p>
+                <p class="process-summary-label" id="processSummaryLabel">
+                  System logic
+                </p>
                 <p class="process-summary-text" id="processSummary">
                   Attention becomes branded content, then turns into sharing and
                   real business action.
@@ -107,17 +121,17 @@
               <div class="step-nav" aria-hidden="true">
                 <div class="step-item is-active" id="step1">
                   <span class="step-index">01</span>
-                  <span class="step-label">Activation</span>
+                  <span class="step-label" id="stepLabel1">Activation</span>
                 </div>
 
                 <div class="step-item" id="step2">
                   <span class="step-index">02</span>
-                  <span class="step-label">Creation</span>
+                  <span class="step-label" id="stepLabel2">Creation</span>
                 </div>
 
                 <div class="step-item" id="step3">
                   <span class="step-index">03</span>
-                  <span class="step-label">Delivery</span>
+                  <span class="step-label" id="stepLabel3">Delivery</span>
                 </div>
               </div>
 
@@ -240,7 +254,9 @@
               </div>
 
               <div class="mobile-summary-block">
-                <p class="mobile-summary-label">System logic</p>
+                <p class="mobile-summary-label" id="mobileSummaryLabel">
+                  System logic
+                </p>
                 <p class="mobile-summary" id="mobileSummary">
                   A real-world touchpoint grabs attention and starts the journey
                   instantly.
@@ -258,15 +274,21 @@
               <div class="mobile-step-nav" aria-hidden="true">
                 <div class="mobile-step-item is-active" id="mobileStep1">
                   <span class="mobile-step-index">01</span>
-                  <span class="mobile-step-label">Activation</span>
+                  <span class="mobile-step-label" id="mobileStepLabel1"
+                    >Activation</span
+                  >
                 </div>
                 <div class="mobile-step-item" id="mobileStep2">
                   <span class="mobile-step-index">02</span>
-                  <span class="mobile-step-label">Creation</span>
+                  <span class="mobile-step-label" id="mobileStepLabel2"
+                    >Creation</span
+                  >
                 </div>
                 <div class="mobile-step-item" id="mobileStep3">
                   <span class="mobile-step-index">03</span>
-                  <span class="mobile-step-label">Delivery</span>
+                  <span class="mobile-step-label" id="mobileStepLabel3"
+                    >Delivery</span
+                  >
                 </div>
               </div>
             </div>
@@ -274,9 +296,11 @@
 
           <div class="ending-copy" id="endingCopy" aria-hidden="true">
             <div class="ending-copy-inner">
-              <span class="ending-overline">Guest journey complete</span>
-              <strong>Your guest. Your choice.</strong>
-              <p>
+              <span class="ending-overline" id="endingOverline"
+                >Guest journey complete</span
+              >
+              <strong id="endingStrong">Your guest. Your choice.</strong>
+              <p id="endingBody">
                 Turn real guest moments into branded content, shares, clicks and
                 measurable business results.
               </p>
@@ -284,7 +308,7 @@
           </div>
 
           <div class="scroll-indicator" id="scrollIndicator" aria-hidden="true">
-            <span>Scroll</span>
+            <span id="scrollIndicatorText">Scroll</span>
             <span class="scroll-arrow">↓</span>
           </div>
         </div>
@@ -297,9 +321,9 @@
       >
         <div class="demo-shell">
           <div class="demo-copy">
-            <p class="demo-kicker">Next step</p>
+            <p class="demo-kicker" id="demoKicker">Next step</p>
             <h2 id="demoTitle">Book a Demo</h2>
-            <p class="demo-lead">
+            <p class="demo-lead" id="demoLead">
               See the full flow live — guest activation, branded content
               creation, instant delivery and the conversion layer that drives
               real business outcomes.
@@ -307,20 +331,26 @@
 
             <div class="demo-highlights" aria-hidden="true">
               <div class="demo-highlight">
-                <span class="demo-highlight-title">Activation</span>
-                <span class="demo-highlight-text">
+                <span class="demo-highlight-title" id="demoHighlightTitle1"
+                  >Activation</span
+                >
+                <span class="demo-highlight-text" id="demoHighlightText1">
                   Physical trigger, QR entry and a frictionless start
                 </span>
               </div>
               <div class="demo-highlight">
-                <span class="demo-highlight-title">Creation</span>
-                <span class="demo-highlight-text">
+                <span class="demo-highlight-title" id="demoHighlightTitle2"
+                  >Creation</span
+                >
+                <span class="demo-highlight-text" id="demoHighlightText2">
                   Your branding, your motion language and your content output
                 </span>
               </div>
               <div class="demo-highlight">
-                <span class="demo-highlight-title">Delivery</span>
-                <span class="demo-highlight-text">
+                <span class="demo-highlight-title" id="demoHighlightTitle3"
+                  >Delivery</span
+                >
+                <span class="demo-highlight-text" id="demoHighlightText3">
                   Sharing, CTA, booking logic, reward flow and tracking options
                 </span>
               </div>
@@ -329,31 +359,54 @@
 
           <form class="demo-form">
             <label>
-              <span>Name</span>
-              <input type="text" name="name" placeholder="Your full name" />
+              <span id="formLabelName">Name</span>
+              <input
+                type="text"
+                name="name"
+                id="formInputName"
+                placeholder="Your full name"
+              />
             </label>
 
             <label>
-              <span>Email</span>
-              <input type="email" name="email" placeholder="you@company.com" />
+              <span id="formLabelEmail">Email</span>
+              <input
+                type="email"
+                name="email"
+                id="formInputEmail"
+                placeholder="you@company.com"
+              />
             </label>
 
             <label>
-              <span>Company</span>
-              <input type="text" name="company" placeholder="Company name" />
+              <span id="formLabelCompany">Company</span>
+              <input
+                type="text"
+                name="company"
+                id="formInputCompany"
+                placeholder="Company name"
+              />
             </label>
 
             <label>
-              <span>Message</span>
+              <span id="formLabelMessage">Message</span>
               <textarea
                 name="message"
+                id="formInputMessage"
                 rows="5"
                 placeholder="Tell us what you want to see in the demo"
               ></textarea>
             </label>
 
-            <button type="submit" class="demo-submit" aria-label="Book a Demo">
-              <span class="demo-submit-text">Book a Demo</span>
+            <button
+              type="submit"
+              class="demo-submit"
+              id="demoSubmit"
+              aria-label="Book a Demo"
+            >
+              <span class="demo-submit-text" id="demoSubmitText"
+                >Book a Demo</span
+              >
             </button>
           </form>
         </div>

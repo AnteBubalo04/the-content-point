@@ -210,10 +210,52 @@ body::-webkit-scrollbar-thumb {
 .process-panel,
 .mobile-story-card,
 .scroll-indicator,
-.ending-copy {
+.ending-copy,
+.lang-toggle {
   position: absolute;
   z-index: 40;
   will-change: opacity, transform;
+}
+
+.lang-toggle {
+  top: max(16px, calc(var(--safe-top) + 10px));
+  right: max(16px, calc(var(--safe-right) + 12px));
+  z-index: 80;
+  min-width: 56px;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(245, 248, 255, 0.96);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+  pointer-events: auto;
+}
+
+.lang-toggle:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.lang-toggle:focus-visible {
+  outline: 2px solid rgba(196, 213, 255, 0.9);
+  outline-offset: 3px;
 }
 
 .hero-copy {
@@ -294,16 +336,16 @@ body::-webkit-scrollbar-thumb {
 
 .copy-anim {
   transition:
-    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 320ms cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: center;
 }
 
 .copy-anim.is-changing {
   opacity: 0;
-  transform: translateY(16px) scale(0.988);
-  filter: blur(10px);
+  transform: translateY(12px) scale(0.992);
+  filter: blur(8px);
 }
 
 .eyebrow-wrap {
@@ -1423,6 +1465,15 @@ body::-webkit-scrollbar-thumb {
     letter-spacing: 0.16em;
   }
 
+  .lang-toggle {
+    top: max(12px, calc(var(--safe-top) + 8px));
+    right: max(12px, calc(var(--safe-right) + 8px));
+    min-width: 52px;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
   .scene {
     padding-inline: 10px;
   }
@@ -1612,7 +1663,8 @@ body::-webkit-scrollbar-thumb {
   .scroll-indicator,
   .ending-copy,
   .device-stack,
-  .copy-anim {
+  .copy-anim,
+  .lang-toggle {
     transition: none;
   }
 
