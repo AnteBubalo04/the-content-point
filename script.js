@@ -372,14 +372,14 @@ const DESKTOP_POSES = {
 };
 
 const MOBILE_POSES = {
-  hero: { y: 18, scale: 1.02 },
-  v1Focus: { y: 14, scale: 1.08 },
-  v1Detail: { y: -94, scale: 0.81 },
-  v2Focus: { y: 14, scale: 1.08 },
-  v2Detail: { y: -94, scale: 0.81 },
-  v3Focus: { y: 14, scale: 1.08 },
-  v3Detail: { y: -94, scale: 0.81 },
-  ending: { y: -94, scale: 0.81 },
+  hero: { y: 4, scale: 1.02 },
+  v1Focus: { y: -12, scale: 1.08 },
+  v1Detail: { y: -8, scale: 0.64 },
+  v2Focus: { y: -12, scale: 1.08 },
+  v2Detail: { y: -8, scale: 0.64 },
+  v3Focus: { y: -12, scale: 1.08 },
+  v3Detail: { y: -8, scale: 0.64 },
+  ending: { y: -8, scale: 0.64 },
 };
 
 const state = {
@@ -396,6 +396,7 @@ const state = {
   isCopyAnimating: false,
   lastRenderKey: "",
   lastLogicalCopyKey: "",
+  lastMobileLayoutKey: "",
 };
 
 const snapState = {
@@ -785,8 +786,9 @@ function setInfoCopy(content, force = false) {
     return;
   }
 
-  if (signature === state.currentCopySignature && !state.isCopyAnimating)
+  if (signature === state.currentCopySignature && !state.isCopyAnimating) {
     return;
+  }
 
   state.pendingCopySignature = signature;
 
@@ -890,9 +892,6 @@ function isSnapRegionActive() {
   const storyMetrics = getStoryMetrics();
   const y = window.scrollY;
   const lowerBound = storyMetrics.startY - 2;
-
-  // Snap vrijedi samo unutar sticky story sekcije.
-  // Čim dođeš do kraja storyja, scroll mora biti normalan prema demo formi.
   const upperBound = storyMetrics.endY - 2;
 
   return y >= lowerBound && y <= upperBound;
@@ -1069,8 +1068,9 @@ function getCopyForState(key, lang = state.currentLanguage) {
   const locale = I18N[lang] || I18N.en;
   if (key === "v1Focus" || key === "v1Detail") return locale.copy.activation;
   if (key === "v2Focus" || key === "v2Detail") return locale.copy.creation;
-  if (key === "v3Focus" || key === "v3Detail" || key === "ending")
+  if (key === "v3Focus" || key === "v3Detail" || key === "ending") {
     return locale.copy.delivery;
+  }
   return locale.copy.activation;
 }
 
@@ -1112,6 +1112,18 @@ function applyShellState(shell, opacity, y, scale, zIndex) {
   setVisibility(shell, opacity > 0.01);
   setTransform(shell, 0, y, scale);
   shell.style.zIndex = String(zIndex);
+}
+
+function isMobileSplitStateKey(key) {
+  return key === "v1Detail" || key === "v2Detail" || key === "v3Detail";
+}
+
+function applyMobileCardLayout(layoutKey) {
+  if (!mobileStoryCard) return;
+  if (state.lastMobileLayoutKey === layoutKey) return;
+
+  state.lastMobileLayoutKey = layoutKey;
+  mobileStoryCard.dataset.layout = layoutKey === "split" ? "split" : "stack";
 }
 
 function renderVideos(segment) {
@@ -1332,13 +1344,28 @@ function renderTextLayers(segment) {
   setOpacity(scrollIndicator, showHero > 0.08 ? showHero : 0);
 
   if (layoutCache.isMobile) {
+    const dominantState = getDominantStoryState(segment);
+
+    const splitLayout =
+      isMobileSplitStateKey(fromKey) ||
+      isMobileSplitStateKey(toKey) ||
+      isMobileSplitStateKey(dominantState);
+
+    applyMobileCardLayout(splitLayout ? "split" : "stack");
+
     setOpacity(infoPanel, 0);
     setOpacity(processPanel, 0);
     setOpacity(mobileStoryCard, detailOpacity);
 
-    const cardY = lerp(28, 0, detailOpacity);
-    mobileStoryCard.style.transform = `translate3d(-50%, ${cardY.toFixed(3)}px, 0)`;
+    if (splitLayout) {
+      mobileStoryCard.style.transform = "translate3d(-50%, 0, 0)";
+    } else {
+      const cardY = lerp(28, 0, detailOpacity);
+      mobileStoryCard.style.transform = `translate3d(-50%, ${cardY.toFixed(3)}px, 0)`;
+    }
   } else {
+    applyMobileCardLayout("stack");
+
     setOpacity(infoPanel, detailOpacity);
     setOpacity(processPanel, detailOpacity);
     setOpacity(mobileStoryCard, 0);
@@ -1366,7 +1393,7 @@ function updateCopyAndSteps(segment) {
   const content = getCopyForState(dominantState);
 
   if (shouldShowCopyForState(dominantState)) {
-    const logicalKey = `${state.currentLanguage}:${content.key}:${layoutCache.isMobile ? "m" : "d"}`;
+    const logicalKey = `${state.currentLanguage}:${content.key}:${layoutCache.isMobile ? "m" : "d"}:${isMobileSplitStateKey(dominantState) ? "split" : "stack"}`;
     if (logicalKey !== state.lastLogicalCopyKey) {
       setInfoCopy(content);
       state.lastLogicalCopyKey = logicalKey;
@@ -1458,6 +1485,7 @@ function requestResizeRecalc() {
     updateStoryHeight();
     state.lastRenderKey = "";
     state.lastLogicalCopyKey = "";
+    state.lastMobileLayoutKey = "";
     renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
   });
@@ -1663,6 +1691,7 @@ window.addEventListener("load", () => {
 
   state.smoothProgress = getStoryProgress();
   syncCurrentStationFromScroll();
+  applyMobileCardLayout("stack");
   renderScene(state.smoothProgress);
   state.rafId = requestAnimationFrame(tick);
 
@@ -1671,6 +1700,7 @@ window.addEventListener("load", () => {
     updateStoryHeight();
     state.lastRenderKey = "";
     state.lastLogicalCopyKey = "";
+    state.lastMobileLayoutKey = "";
     renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
   }, 180);
