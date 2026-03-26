@@ -11,10 +11,6 @@ const invLerp = (value, min, max) => {
 const easeInOutCubic = (t) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
-
-const mix01 = (progress, start, end, ease = easeInOutCubic) =>
-  ease(invLerp(progress, start, end));
 
 const prefersReducedMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
@@ -23,6 +19,7 @@ const prefersReducedMotion = window.matchMedia(
 const story = document.getElementById("story");
 const stage = document.getElementById("stage");
 const deviceStack = document.getElementById("deviceStack");
+const demoSection = document.getElementById("demoSection");
 
 const heroCopy = document.getElementById("heroCopy");
 const endingCopy = document.getElementById("endingCopy");
@@ -83,12 +80,82 @@ const video1 = document.getElementById("video1");
 const video2 = document.getElementById("video2");
 const video3 = document.getElementById("video3");
 
-function getVideoSource(video, fallback) {
-  return {
-    width: video?.videoWidth || fallback.width,
-    height: video?.videoHeight || fallback.height,
-  };
-}
+const STORY_STATION_COUNT = 8;
+const GLOBAL_DEMO_INDEX = 8;
+
+const STORY_STATE_KEYS = [
+  "hero",
+  "v1Focus",
+  "v1Detail",
+  "v2Focus",
+  "v2Detail",
+  "v3Focus",
+  "v3Detail",
+  "ending",
+];
+
+const prefersTouch =
+  window.matchMedia("(pointer: coarse)").matches ||
+  navigator.maxTouchPoints > 0;
+
+const TUNE = {
+  scrollSmoothing: prefersReducedMotion ? 40 : 9.2,
+  snapDurationDesktop: 980,
+  snapDurationMobile: 1060,
+  snapCooldown: 180,
+  touchThreshold: 18,
+  wheelThreshold: 4,
+};
+
+const COPY = {
+  activation: {
+    key: "activation",
+    kicker: "Step 01",
+    leadline: "Grab attention and turn it into action.",
+    title: "Scan. Start. Join.",
+    body: "One quick scan takes guests straight into the experience.",
+    detail:
+      "Fast to launch, easy to understand and simple to use across venues, campaigns and offers.",
+    implementation:
+      "Demo branding is illustrative only. In production, visuals, CTA, tags and destination link are fully replaced with the client’s own brand system.",
+    tag: "Brand-ready",
+    pills: ["High attention", "Instant entry", "Low friction"],
+    miniPoints: ["Physical trigger", "QR entry", "Clear CTA"],
+    summary:
+      "A real-world touchpoint captures attention and starts the journey instantly.",
+  },
+  creation: {
+    key: "creation",
+    kicker: "Step 02",
+    leadline: "Turn the guest moment into branded content.",
+    title: "Your brand, built into every output.",
+    body: "Each captured moment becomes a polished asset shaped by your visual identity.",
+    detail:
+      "Overlay, motion, styling and tags adapt to the venue, campaign or client brand.",
+    implementation:
+      "Everything shown in the demo is replaceable — animation, naming, hashtags, CTA and visual treatment become fully client-specific.",
+    tag: "Fully custom",
+    pills: ["Branded output", "Share-ready", "Premium look"],
+    miniPoints: ["Custom overlay", "Campaign tags", "Polished asset"],
+    summary: "The output feels premium, branded and instantly worth sharing.",
+  },
+  delivery: {
+    key: "delivery",
+    kicker: "Step 03",
+    leadline: "Move content into clicks, shares and action.",
+    title: "Share. Click. Convert.",
+    body: "The finished content is delivered instantly for download, sharing and the next business step.",
+    detail:
+      "This is where the experience drives bookings, traffic, offers, referrals or repeat visits.",
+    implementation:
+      "The final link, reward logic and tracking layer can be adapted to the business model — from bookings and promos to referral-driven growth.",
+    tag: "Conversion layer",
+    pills: ["Business CTA", "Reward-ready", "Trackable"],
+    miniPoints: ["Direct link", "Reward logic", "Measured outcomes"],
+    summary:
+      "The final layer turns branded content into measurable intent and business results.",
+  },
+};
 
 const CROP = {
   v1Start: { x: 0, y: 0, w: 1080, h: 1920 },
@@ -98,158 +165,58 @@ const CROP = {
   v2Hero: { x: 620, y: 0, w: 680, h: 1080 },
 
   v3Start: { x: 0, y: 0, w: 1080, h: 1920 },
-  v3Hero: { x: 0, y: 0, w: 1080, h: 1920 },
 };
 
-const COPY = {
-  activation: {
-    key: "activation",
-    kicker: "Step 01",
-    leadline: "Turn attention into instant participation.",
-    title: "Scan. Start. Join.",
-    body: "One scan brings guests straight into the experience.",
-    detail:
-      "Clear, fast and easy to launch across venues, campaigns and offers.",
-    implementation:
-      "Demo branding is illustrative only. In production, visuals, CTA, tags and destination link are fully replaced with the client’s own brand system.",
-    tag: "Brand-ready",
-    pills: ["High attention", "Instant entry", "Low friction"],
-    miniPoints: ["Physical trigger", "QR entry", "Clear CTA"],
-    summary:
-      "A real-world touchpoint grabs attention and starts the journey instantly.",
-  },
-  creation: {
-    key: "creation",
-    kicker: "Step 02",
-    leadline: "The guest moment becomes branded content.",
-    title: "Your brand, built into the output.",
-    body: "The captured moment becomes a polished asset shaped by your identity.",
-    detail:
-      "Overlay, motion, styling and tags adapt to the client, venue or campaign.",
-    implementation:
-      "Everything shown in the demo is replaceable — animation, naming, hashtags, CTA and visual treatment become fully client-specific.",
-    tag: "Fully custom",
-    pills: ["Your identity", "Your styling", "Share-ready"],
-    miniPoints: ["Custom overlay", "Campaign tags", "Premium output"],
-    summary:
-      "Content is produced in a format people want to keep, share and connect with your brand.",
-  },
-  delivery: {
-    key: "delivery",
-    kicker: "Step 03",
-    leadline: "Content moves into action.",
-    title: "Share. Click. Convert.",
-    body: "The finished content is delivered for download, sharing and the next step.",
-    detail:
-      "This is where the experience can drive bookings, traffic, offers, referrals or repeat visits.",
-    implementation:
-      "The final link, reward logic and tracking method can be adapted to the business model — from bookings and promos to referral-driven growth.",
-    tag: "Conversion layer",
-    pills: ["Business CTA", "Reward-ready", "Trackable"],
-    miniPoints: ["Brand link", "Referral logic", "Real outcomes"],
-    summary:
-      "The final layer turns branded content into measurable reach and business intent.",
-  },
+const DESKTOP_POSES = {
+  hero: { y: 42, scale: 0.88 },
+  v1Focus: { y: -2, scale: 1.04 },
+  v1Detail: { y: -118, scale: 0.79 },
+  v2Focus: { y: -2, scale: 1.04 },
+  v2Detail: { y: -118, scale: 0.79 },
+  v3Focus: { y: -2, scale: 1.04 },
+  v3Detail: { y: -118, scale: 0.79 },
 };
 
-const TUNE = {
-  scrollSmoothing: prefersReducedMotion ? 40 : 10.25,
-
-  stackYDesktopStart: 88,
-  stackYDesktopHero: 0,
-
-  stackYTabletStart: 74,
-  stackYTabletHero: 6,
-
-  stackScaleDesktopStart: 0.84,
-  stackScaleDesktopHero: 1.0,
-
-  stackScaleTabletStart: 0.82,
-  stackScaleTabletHero: 0.96,
-
-  mobileForegroundScale: 1.14,
-  mobileForegroundScaleAlt: 1.12,
-  mobileDetailScale: 0.76,
-
-  mobileForegroundY: 18,
-  mobileDetailYFactor: -0.17,
-
-  mobileCardEnterY: 26,
+const MOBILE_POSES = {
+  hero: { y: 18, scale: 1.02 },
+  v1Focus: { y: 14, scale: 1.08 },
+  v1Detail: { y: -94, scale: 0.81 },
+  v2Focus: { y: 14, scale: 1.08 },
+  v2Detail: { y: -94, scale: 0.81 },
+  v3Focus: { y: 14, scale: 1.08 },
+  v3Detail: { y: -94, scale: 0.81 },
 };
 
-const DESKTOP_PHASE = {
-  intro: [0.0, 0.12],
-
-  step1: [0.0, 0.375],
-  step1Out: [0.375, 0.43],
-
-  step2In: [0.375, 0.445],
-  step2: [0.445, 0.635],
-  step2Out: [0.635, 0.715],
-
-  step3In: [0.705, 0.79],
-  step3: [0.79, 0.895],
-  step3Out: [0.895, 0.945],
-
-  endingIn: [0.95, 0.98],
-  endingHold: [0.98, 1.0],
-};
-
-const MOBILE_PHASE = {
-  intro: [0.0, 0.04],
-
-  step1Show: [0.0, 0.18],
-  step1Detail: [0.18, 0.34],
-  step1Cross: [0.34, 0.4],
-
-  step2Show: [0.4, 0.53],
-  step2Detail: [0.53, 0.68],
-  step2Cross: [0.68, 0.74],
-
-  step3Show: [0.74, 0.84],
-  step3Detail: [0.84, 0.93],
-  step3Out: [0.93, 0.965],
-
-  endingIn: [0.965, 0.99],
-  endingHold: [0.99, 1.0],
-};
-
-let rafId = 0;
-let resizeRaf = 0;
-let lastTime = performance.now();
-let targetProgress = 0;
-let smoothProgress = 0;
-let sceneVisible = true;
-let lastRenderKey = "";
-let currentCopyKey = "";
-let rafResizeCounter = 0;
-
-const layoutCache = {
-  isTablet: false,
-  isMobile: false,
-  stackScaleStart: 1,
-  stackScaleHero: 1,
-  stackYStart: 0,
-  stackYHero: 0,
+const state = {
+  rafId: 0,
+  resizeRaf: 0,
+  lastTime: performance.now(),
+  targetProgress: 0,
+  smoothProgress: 0,
+  currentCopyKey: "",
+  lastRenderKey: "",
+  sceneVisible: true,
 };
 
 const snapState = {
   isAnimating: false,
   animationFrame: 0,
+  currentIndex: 0,
+  requestedIndex: 0,
   lockUntil: 0,
-  currentStationIndex: 0,
-  requestedStationIndex: 0,
 
-  wheelGestureLocked: false,
-  wheelGestureTimer: 0,
+  wheelLocked: false,
+  wheelTimer: 0,
 
   touchActive: false,
-  touchMoved: false,
-  touchTriggered: false,
   touchStartY: 0,
-  touchLastY: 0,
+  touchTriggered: false,
 
   releaseSnapTimer: 0,
+};
+
+const layoutCache = {
+  isMobile: false,
 };
 
 function setTransform(el, x, y, scale) {
@@ -269,327 +236,11 @@ function setVisibility(el, visible) {
   el.style.visibility = visible ? "visible" : "hidden";
 }
 
-function setActiveStep(activeIndex) {
-  [step1, step2, step3].forEach((step, index) => {
-    step?.classList.toggle("is-active", index === activeIndex);
-  });
-
-  [mobileStep1, mobileStep2, mobileStep3].forEach((step, index) => {
-    step?.classList.toggle("is-active", index === activeIndex);
-  });
-}
-
-function animateSwap(nodes, onMidpoint) {
-  if (prefersReducedMotion) {
-    onMidpoint();
-    return;
-  }
-
-  nodes.forEach((node) => node?.classList.add("is-changing"));
-
-  window.setTimeout(() => {
-    onMidpoint();
-    requestAnimationFrame(() => {
-      nodes.forEach((node) => node?.classList.remove("is-changing"));
-    });
-  }, 180);
-}
-
-function renderMiniPoints(items = []) {
-  if (!miniPoints) return;
-  miniPoints.innerHTML = items
-    .map((item) => `<span class="mini-point">${item}</span>`)
-    .join("");
-}
-
-function setMobileCardStep(key) {
-  if (!mobileStoryCard) return;
-  mobileStoryCard.dataset.step = key || "activation";
-}
-
-function setInfoCopy(content, force = false) {
-  if (!content) return;
-  if (!force && currentCopyKey === content.key) return;
-
-  const apply = () => {
-    infoKicker.textContent = content.kicker;
-    infoLeadline.textContent = content.leadline;
-    infoTitle.textContent = content.title;
-    infoBody.textContent = content.body;
-    infoDetail.textContent = content.detail;
-    infoImplementation.textContent = content.implementation;
-    infoTag.textContent = content.tag;
-
-    infoPillA.textContent = content.pills?.[0] || "";
-    infoPillB.textContent = content.pills?.[1] || "";
-    infoPillC.textContent = content.pills?.[2] || "";
-
-    processSummary.textContent = content.summary;
-    renderMiniPoints(content.miniPoints || []);
-
-    mobileKicker.textContent = content.kicker;
-    mobileTag.textContent = content.tag;
-    mobileLeadline.textContent = content.leadline;
-    mobileTitle.textContent = content.title;
-    mobileBody.textContent = content.body;
-    mobileDetail.textContent = content.detail;
-    mobilePillA.textContent = content.pills?.[0] || "";
-    mobilePillB.textContent = content.pills?.[1] || "";
-    mobilePillC.textContent = content.pills?.[2] || "";
-    mobileSummary.textContent = content.summary;
-
-    setMobileCardStep(content.key);
-    currentCopyKey = content.key;
-  };
-
-  if (force || prefersReducedMotion || !currentCopyKey) {
-    apply();
-    return;
-  }
-
-  animateSwap([infoCopyMotion, processSummaryMotion, mobileCopyMotion], apply);
-}
-
-function ensureAmbientPlayback(video) {
-  if (!video) return;
-  video.muted = true;
-  video.playsInline = true;
-  video.loop = true;
-
-  const playPromise = video.play();
-  if (playPromise && typeof playPromise.then === "function") {
-    playPromise.catch(() => {});
-  }
-}
-
-function pauseVideo(video) {
-  if (!video || video.paused) return;
-  try {
-    video.pause();
-  } catch (_) {}
-}
-
-function updateStoryHeight() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  let value = 1180;
-
-  if (w <= 560) value = 1820;
-  else if (w <= 760) value = 1760;
-  else if (w <= 980) value = 1680;
-  else if (w <= 1280) value = 1260;
-
-  if (w <= 980 && h <= 760) value += 80;
-
-  story.style.height = `${value}vh`;
-}
-
-function updateLayoutCache() {
-  const w = window.innerWidth;
-  layoutCache.isMobile = w <= 980;
-  layoutCache.isTablet = w > 980 && w <= 1280;
-
-  if (layoutCache.isMobile) {
-    layoutCache.stackScaleStart = 1;
-    layoutCache.stackScaleHero = 1;
-    layoutCache.stackYStart = 0;
-    layoutCache.stackYHero = 0;
-    return;
-  }
-
-  if (layoutCache.isTablet) {
-    layoutCache.stackScaleStart = TUNE.stackScaleTabletStart;
-    layoutCache.stackScaleHero = TUNE.stackScaleTabletHero;
-    layoutCache.stackYStart = TUNE.stackYTabletStart;
-    layoutCache.stackYHero = TUNE.stackYTabletHero;
-    return;
-  }
-
-  layoutCache.stackScaleStart = TUNE.stackScaleDesktopStart;
-  layoutCache.stackScaleHero = TUNE.stackScaleDesktopHero;
-  layoutCache.stackYStart = TUNE.stackYDesktopStart;
-  layoutCache.stackYHero = TUNE.stackYDesktopHero;
-}
-
-function getStoryProgress() {
-  const rect = story.getBoundingClientRect();
-  const maxScroll = Math.max(story.offsetHeight - window.innerHeight, 1);
-  const current = clamp(-rect.top, 0, maxScroll);
-  return clamp(current / maxScroll, 0, 1);
-}
-
-function getStoryMetrics() {
-  const rect = story.getBoundingClientRect();
-  const top = window.scrollY + rect.top;
-  const maxScroll = Math.max(story.offsetHeight - window.innerHeight, 1);
+function getVideoSource(video, fallback) {
   return {
-    top,
-    maxScroll,
-    startY: top,
-    endY: top + maxScroll,
+    width: video?.videoWidth || fallback.width,
+    height: video?.videoHeight || fallback.height,
   };
-}
-
-function progressToPageY(progress) {
-  const metrics = getStoryMetrics();
-  return metrics.startY + metrics.maxScroll * clamp(progress, 0, 1);
-}
-
-function isStoryScrollLockedRegion() {
-  const metrics = getStoryMetrics();
-  const y = window.scrollY;
-  return y >= metrics.startY && y <= metrics.endY;
-}
-
-function getSnapStations() {
-  if (layoutCache.isMobile) {
-    return [
-      0,
-      MOBILE_PHASE.step1Detail[1],
-      MOBILE_PHASE.step2Detail[1],
-      MOBILE_PHASE.step3Detail[1],
-      1,
-    ];
-  }
-
-  return [
-    0,
-    DESKTOP_PHASE.step1[1],
-    DESKTOP_PHASE.step2[1],
-    DESKTOP_PHASE.step3[1],
-    1,
-  ];
-}
-
-function getClosestSnapIndex(progress) {
-  const stations = getSnapStations();
-  let closestIndex = 0;
-  let closestDistance = Infinity;
-
-  for (let i = 0; i < stations.length; i += 1) {
-    const distance = Math.abs(progress - stations[i]);
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestIndex = i;
-    }
-  }
-
-  return closestIndex;
-}
-
-function syncCurrentStationFromScroll() {
-  snapState.currentStationIndex = getClosestSnapIndex(getStoryProgress());
-  snapState.requestedStationIndex = snapState.currentStationIndex;
-}
-
-function cancelSnapAnimation() {
-  if (snapState.animationFrame) {
-    cancelAnimationFrame(snapState.animationFrame);
-    snapState.animationFrame = 0;
-  }
-  snapState.isAnimating = false;
-}
-
-function animateWindowScrollTo(targetY, duration = 720, onDone) {
-  cancelSnapAnimation();
-
-  const startY = window.scrollY;
-  const delta = targetY - startY;
-
-  if (Math.abs(delta) < 1) {
-    window.scrollTo(0, targetY);
-    snapState.isAnimating = false;
-    onDone?.();
-    return;
-  }
-
-  snapState.isAnimating = true;
-  const startTime = performance.now();
-
-  const step = (now) => {
-    const t = clamp((now - startTime) / duration, 0, 1);
-    const eased = easeInOutCubic(t);
-    const nextY = startY + delta * eased;
-    window.scrollTo(0, nextY);
-    lastRenderKey = "";
-
-    if (t < 1) {
-      snapState.animationFrame = requestAnimationFrame(step);
-      return;
-    }
-
-    window.scrollTo(0, targetY);
-    snapState.animationFrame = 0;
-    snapState.isAnimating = false;
-    lastRenderKey = "";
-    onDone?.();
-  };
-
-  snapState.animationFrame = requestAnimationFrame(step);
-}
-
-function snapToStationIndex(index, options = {}) {
-  const stations = getSnapStations();
-  const clampedIndex = clamp(index, 0, stations.length - 1);
-  const progress = stations[clampedIndex];
-  const targetY = progressToPageY(progress);
-  const duration = options.duration ?? (layoutCache.isMobile ? 1200 : 1100);
-
-  snapState.requestedStationIndex = clampedIndex;
-  snapState.lockUntil = performance.now() + duration + 260;
-
-  if (prefersReducedMotion || options.instant) {
-    cancelSnapAnimation();
-    window.scrollTo(0, targetY);
-    snapState.currentStationIndex = clampedIndex;
-    snapState.requestedStationIndex = clampedIndex;
-    lastRenderKey = "";
-    return;
-  }
-
-  animateWindowScrollTo(targetY, duration, () => {
-    snapState.currentStationIndex = clampedIndex;
-    snapState.requestedStationIndex = clampedIndex;
-  });
-}
-
-function snapToNearestStation() {
-  if (!isStoryScrollLockedRegion()) return;
-  if (snapState.isAnimating) return;
-
-  const index = getClosestSnapIndex(getStoryProgress());
-  snapToStationIndex(index, { duration: layoutCache.isMobile ? 820 : 760 });
-}
-
-function getNextStationIndex(direction) {
-  const stations = getSnapStations();
-  const baseIndex = clamp(
-    snapState.isAnimating
-      ? snapState.requestedStationIndex
-      : snapState.currentStationIndex,
-    0,
-    stations.length - 1,
-  );
-
-  if (direction > 0) {
-    return clamp(baseIndex + 1, 0, stations.length - 1);
-  }
-
-  if (direction < 0) {
-    return clamp(baseIndex - 1, 0, stations.length - 1);
-  }
-
-  return baseIndex;
-}
-
-function releaseWheelGestureLockLater() {
-  if (snapState.wheelGestureTimer) {
-    clearTimeout(snapState.wheelGestureTimer);
-  }
-
-  snapState.wheelGestureTimer = window.setTimeout(() => {
-    snapState.wheelGestureLocked = false;
-  }, 1400);
 }
 
 function lerpRect(a, b, t) {
@@ -660,7 +311,9 @@ function setVideoCrop(video, viewportEl, rect, source, options = {}) {
 
   video.style.width = `${source.width}px`;
   video.style.height = `${source.height}px`;
-  video.style.transform = `translate3d(${tx.toFixed(4)}px, ${ty.toFixed(4)}px, 0) scale(${scale.toFixed(6)})`;
+  video.style.transform =
+    `translate3d(${tx.toFixed(4)}px, ${ty.toFixed(4)}px, 0) ` +
+    `scale(${scale.toFixed(6)})`;
 }
 
 function getVideo3CropRect(source) {
@@ -684,761 +337,287 @@ function getVideo3CropRect(source) {
   };
 }
 
-function getDesktopOpacities(progress) {
-  const softStep2InStart = DESKTOP_PHASE.step2In[0] - 0.04;
-  const softStep2InEnd = DESKTOP_PHASE.step2In[1] + 0.06;
-  const softStep3InStart = DESKTOP_PHASE.step3In[0] - 0.045;
-  const softStep3InEnd = DESKTOP_PHASE.step3In[1] + 0.065;
-
-  let v1 = 1;
-  if (progress > DESKTOP_PHASE.step1Out[0]) {
-    v1 =
-      1 -
-      mix01(
-        progress,
-        DESKTOP_PHASE.step1Out[0],
-        DESKTOP_PHASE.step1Out[1],
-        easeInOutCubic,
-      );
-  }
-
-  let v2 = 0;
-  if (progress >= softStep2InStart && progress < softStep2InEnd) {
-    v2 = mix01(progress, softStep2InStart, softStep2InEnd, easeInOutCubic);
-  } else if (
-    progress >= softStep2InEnd &&
-    progress <= DESKTOP_PHASE.step2Out[0]
-  ) {
-    v2 = 1;
-  } else if (
-    progress > DESKTOP_PHASE.step2Out[0] &&
-    progress < DESKTOP_PHASE.step2Out[1]
-  ) {
-    v2 =
-      1 -
-      mix01(
-        progress,
-        DESKTOP_PHASE.step2Out[0],
-        DESKTOP_PHASE.step2Out[1],
-        easeInOutCubic,
-      );
-  }
-
-  let v3 = 0;
-  if (progress >= softStep3InStart && progress < softStep3InEnd) {
-    v3 = mix01(progress, softStep3InStart, softStep3InEnd, easeInOutCubic);
-  } else if (
-    progress >= softStep3InEnd &&
-    progress <= DESKTOP_PHASE.step3Out[0]
-  ) {
-    v3 = 1;
-  } else if (
-    progress > DESKTOP_PHASE.step3Out[0] &&
-    progress < DESKTOP_PHASE.step3Out[1]
-  ) {
-    v3 =
-      1 -
-      mix01(
-        progress,
-        DESKTOP_PHASE.step3Out[0],
-        DESKTOP_PHASE.step3Out[1],
-        easeInOutCubic,
-      );
-  }
-
-  return {
-    v1: clamp(v1, 0, 1),
-    v2: clamp(v2, 0, 1),
-    v3: clamp(v3, 0, 1),
-  };
-}
-
-function getMobileStepState(progress) {
-  if (progress < MOBILE_PHASE.step1Cross[1]) {
-    return {
-      step: 0,
-      detailT: mix01(
-        progress,
-        MOBILE_PHASE.step1Detail[0],
-        MOBILE_PHASE.step1Detail[1],
-        easeInOutCubic,
-      ),
-      crossToNext: mix01(
-        progress,
-        MOBILE_PHASE.step1Cross[0],
-        MOBILE_PHASE.step1Cross[1],
-        easeInOutCubic,
-      ),
-      endingT: 0,
-    };
-  }
-
-  if (progress < MOBILE_PHASE.step2Cross[1]) {
-    return {
-      step: 1,
-      detailT: mix01(
-        progress,
-        MOBILE_PHASE.step2Detail[0],
-        MOBILE_PHASE.step2Detail[1],
-        easeInOutCubic,
-      ),
-      crossToNext: mix01(
-        progress,
-        MOBILE_PHASE.step2Cross[0],
-        MOBILE_PHASE.step2Cross[1],
-        easeInOutCubic,
-      ),
-      endingT: 0,
-    };
-  }
-
-  return {
-    step: 2,
-    detailT: mix01(
-      progress,
-      MOBILE_PHASE.step3Detail[0],
-      MOBILE_PHASE.step3Detail[1],
-      easeInOutCubic,
-    ),
-    crossToNext: mix01(
-      progress,
-      MOBILE_PHASE.step3Out[0],
-      MOBILE_PHASE.step3Out[1],
-      easeInOutCubic,
-    ),
-    endingT: mix01(
-      progress,
-      MOBILE_PHASE.endingIn[0],
-      MOBILE_PHASE.endingIn[1],
-      easeOutCubic,
-    ),
-  };
-}
-
-function getMobileStepShellState(stepIndex, progress) {
-  const detailY = Math.round(window.innerHeight * TUNE.mobileDetailYFactor);
-  const mobileCrossEase = easeInOutCubic;
-  const step1CrossStart = MOBILE_PHASE.step1Cross[0] - 0.03;
-  const step1CrossEnd = MOBILE_PHASE.step1Cross[1] + 0.04;
-  const step2CrossStart = MOBILE_PHASE.step2Cross[0] - 0.03;
-  const step2CrossEnd = MOBILE_PHASE.step2Cross[1] + 0.04;
-  const step3OutStart = MOBILE_PHASE.step3Out[0] - 0.02;
-  const step3OutEnd = MOBILE_PHASE.step3Out[1] + 0.02;
-
-  if (stepIndex === 0) {
-    const detailT = mix01(
-      progress,
-      MOBILE_PHASE.step1Detail[0],
-      MOBILE_PHASE.step1Detail[1],
-      easeInOutCubic,
-    );
-
-    if (progress < step1CrossStart) {
-      return {
-        opacity: 1,
-        y: lerp(TUNE.mobileForegroundY, detailY, detailT),
-        scale: lerp(
-          TUNE.mobileForegroundScaleAlt,
-          TUNE.mobileDetailScale,
-          detailT,
-        ),
-      };
-    }
-
-    if (progress < step1CrossEnd) {
-      const fadeT = mix01(
-        progress,
-        step1CrossStart,
-        step1CrossEnd,
-        mobileCrossEase,
-      );
-      return {
-        opacity: 1 - fadeT,
-        y: detailY,
-        scale: TUNE.mobileDetailScale,
-      };
-    }
-
-    return {
-      opacity: 0,
-      y: detailY,
-      scale: TUNE.mobileDetailScale,
-    };
-  }
-
-  if (stepIndex === 1) {
-    if (progress < step1CrossStart) {
-      return {
-        opacity: 0,
-        y: TUNE.mobileForegroundY,
-        scale: TUNE.mobileForegroundScale,
-      };
-    }
-
-    if (progress < step1CrossEnd) {
-      const fadeT = mix01(
-        progress,
-        step1CrossStart,
-        step1CrossEnd,
-        mobileCrossEase,
-      );
-      return {
-        opacity: fadeT,
-        y: TUNE.mobileForegroundY,
-        scale: TUNE.mobileForegroundScale,
-      };
-    }
-
-    if (progress < MOBILE_PHASE.step2Detail[0]) {
-      return {
-        opacity: 1,
-        y: TUNE.mobileForegroundY,
-        scale: TUNE.mobileForegroundScale,
-      };
-    }
-
-    if (progress < MOBILE_PHASE.step2Detail[1]) {
-      const detailT = mix01(
-        progress,
-        MOBILE_PHASE.step2Detail[0],
-        MOBILE_PHASE.step2Detail[1],
-        easeInOutCubic,
-      );
-      return {
-        opacity: 1,
-        y: lerp(TUNE.mobileForegroundY, detailY, detailT),
-        scale: lerp(
-          TUNE.mobileForegroundScale,
-          TUNE.mobileDetailScale,
-          detailT,
-        ),
-      };
-    }
-
-    if (progress < step2CrossEnd) {
-      const fadeT = mix01(
-        progress,
-        step2CrossStart,
-        step2CrossEnd,
-        mobileCrossEase,
-      );
-      return {
-        opacity: 1 - fadeT,
-        y: detailY,
-        scale: TUNE.mobileDetailScale,
-      };
-    }
-
-    return {
-      opacity: 0,
-      y: detailY,
-      scale: TUNE.mobileDetailScale,
-    };
-  }
-
-  if (progress < step2CrossStart) {
-    return {
-      opacity: 0,
-      y: TUNE.mobileForegroundY,
-      scale: TUNE.mobileForegroundScale,
-    };
-  }
-
-  if (progress < step2CrossEnd) {
-    const fadeT = mix01(
-      progress,
-      step2CrossStart,
-      step2CrossEnd,
-      mobileCrossEase,
-    );
-    return {
-      opacity: fadeT,
-      y: TUNE.mobileForegroundY,
-      scale: TUNE.mobileForegroundScale,
-    };
-  }
-
-  if (progress < MOBILE_PHASE.step3Detail[0]) {
-    return {
-      opacity: 1,
-      y: TUNE.mobileForegroundY,
-      scale: TUNE.mobileForegroundScale,
-    };
-  }
-
-  if (progress < MOBILE_PHASE.step3Detail[1]) {
-    const detailT = mix01(
-      progress,
-      MOBILE_PHASE.step3Detail[0],
-      MOBILE_PHASE.step3Detail[1],
-      easeInOutCubic,
-    );
-    return {
-      opacity: 1,
-      y: lerp(TUNE.mobileForegroundY, detailY, detailT),
-      scale: lerp(TUNE.mobileForegroundScale, TUNE.mobileDetailScale, detailT),
-    };
-  }
-
-  if (progress < step3OutEnd) {
-    const fadeT = mix01(progress, step3OutStart, step3OutEnd, mobileCrossEase);
-    return {
-      opacity: 1 - fadeT,
-      y: detailY,
-      scale: TUNE.mobileDetailScale,
-    };
-  }
-
-  return {
-    opacity: 0,
-    y: detailY,
-    scale: TUNE.mobileDetailScale,
-  };
-}
-
-function getDominantStep(progress) {
-  if (layoutCache.isMobile) {
-    const mobileState = getMobileStepState(progress);
-    return mobileState.step;
-  }
-
-  if (progress >= DESKTOP_PHASE.step3In[0]) return 2;
-  if (progress >= DESKTOP_PHASE.step2In[0]) return 1;
-  return 0;
-}
-
-function updateCopyAndProgress(progress) {
-  const activeIndex = getDominantStep(progress);
-
-  if (activeIndex === 0) setInfoCopy(COPY.activation);
-  if (activeIndex === 1) setInfoCopy(COPY.creation);
-  if (activeIndex === 2) setInfoCopy(COPY.delivery);
-
-  setActiveStep(activeIndex);
-
-  let fillVisual = 14;
-
-  if (layoutCache.isMobile) {
-    if (activeIndex === 0) {
-      fillVisual = lerp(
-        14,
-        36,
-        mix01(
-          progress,
-          MOBILE_PHASE.step1Show[0],
-          MOBILE_PHASE.step1Detail[1],
-          easeOutCubic,
-        ),
-      );
-    } else if (activeIndex === 1) {
-      fillVisual = lerp(
-        41,
-        69,
-        mix01(
-          progress,
-          MOBILE_PHASE.step2Show[0],
-          MOBILE_PHASE.step2Detail[1],
-          easeOutCubic,
-        ),
-      );
-    } else {
-      fillVisual = lerp(
-        74,
-        100,
-        mix01(
-          progress,
-          MOBILE_PHASE.step3Show[0],
-          MOBILE_PHASE.endingIn[0],
-          easeOutCubic,
-        ),
-      );
-    }
-  } else {
-    fillVisual =
-      activeIndex === 0
-        ? lerp(14, 38, mix01(progress, 0.01, 0.305, easeOutCubic))
-        : activeIndex === 1
-          ? lerp(41, 70, mix01(progress, 0.385, 0.63, easeOutCubic))
-          : lerp(74, 100, mix01(progress, 0.72, 0.95, easeOutCubic));
-  }
-
-  progressFill.style.width = `${fillVisual.toFixed(2)}%`;
-  mobileProgressFill.style.width = `${fillVisual.toFixed(2)}%`;
-}
-
-function manageVideoActivity(progress) {
-  if (!sceneVisible) {
-    pauseVideo(video1);
-    pauseVideo(video2);
-    pauseVideo(video3);
+function animateSwap(nodes, onMidpoint) {
+  if (prefersReducedMotion) {
+    onMidpoint();
     return;
   }
 
-  if (layoutCache.isMobile) {
-    const s1 = getMobileStepShellState(0, progress);
-    const s2 = getMobileStepShellState(1, progress);
-    const s3 = getMobileStepShellState(2, progress);
+  nodes.forEach((node) => node?.classList.add("is-changing"));
 
-    if (s1.opacity > 0.02) ensureAmbientPlayback(video1);
-    else pauseVideo(video1);
+  window.setTimeout(() => {
+    onMidpoint();
+    requestAnimationFrame(() => {
+      nodes.forEach((node) => node?.classList.remove("is-changing"));
+    });
+  }, 160);
+}
 
-    if (s2.opacity > 0.02) ensureAmbientPlayback(video2);
-    else pauseVideo(video2);
+function renderMiniPoints(items = []) {
+  if (!miniPoints) return;
+  miniPoints.innerHTML = items
+    .map((item) => `<span class="mini-point">${item}</span>`)
+    .join("");
+}
 
-    if (s3.opacity > 0.02) ensureAmbientPlayback(video3);
-    else pauseVideo(video3);
+function setMobileCardStep(key) {
+  if (!mobileStoryCard) return;
+  mobileStoryCard.dataset.step = key || "activation";
+}
 
+function setActiveStep(activeIndex) {
+  [step1, step2, step3].forEach((step, index) => {
+    step?.classList.toggle("is-active", index === activeIndex);
+  });
+
+  [mobileStep1, mobileStep2, mobileStep3].forEach((step, index) => {
+    step?.classList.toggle("is-active", index === activeIndex);
+  });
+}
+
+function setInfoCopy(content, force = false) {
+  if (!content) return;
+  if (!force && state.currentCopyKey === content.key) return;
+
+  const apply = () => {
+    infoKicker.textContent = content.kicker;
+    infoLeadline.textContent = content.leadline;
+    infoTitle.textContent = content.title;
+    infoBody.textContent = content.body;
+    infoDetail.textContent = content.detail;
+    infoImplementation.textContent = content.implementation;
+    infoTag.textContent = content.tag;
+
+    infoPillA.textContent = content.pills?.[0] || "";
+    infoPillB.textContent = content.pills?.[1] || "";
+    infoPillC.textContent = content.pills?.[2] || "";
+
+    processSummary.textContent = content.summary;
+    renderMiniPoints(content.miniPoints || []);
+
+    mobileKicker.textContent = content.kicker;
+    mobileTag.textContent = content.tag;
+    mobileLeadline.textContent = content.leadline;
+    mobileTitle.textContent = content.title;
+    mobileBody.textContent = content.body;
+    mobileDetail.textContent = content.detail;
+    mobilePillA.textContent = content.pills?.[0] || "";
+    mobilePillB.textContent = content.pills?.[1] || "";
+    mobilePillC.textContent = content.pills?.[2] || "";
+    mobileSummary.textContent = content.summary;
+
+    setMobileCardStep(content.key);
+    state.currentCopyKey = content.key;
+  };
+
+  if (force || prefersReducedMotion || !state.currentCopyKey) {
+    apply();
     return;
   }
 
-  const v1Active = progress <= DESKTOP_PHASE.step1Out[1] + 0.04;
-  const v2Active =
-    progress >= DESKTOP_PHASE.step2In[0] - 0.05 &&
-    progress <= DESKTOP_PHASE.step2Out[1] + 0.05;
-  const v3Active =
-    progress >= DESKTOP_PHASE.step3In[0] - 0.05 &&
-    progress <= DESKTOP_PHASE.step3Out[1] + 0.05;
-
-  if (v1Active) ensureAmbientPlayback(video1);
-  else pauseVideo(video1);
-
-  if (v2Active) ensureAmbientPlayback(video2);
-  else pauseVideo(video2);
-
-  if (v3Active) ensureAmbientPlayback(video3);
-  else pauseVideo(video3);
+  animateSwap([infoCopyMotion, processSummaryMotion, mobileCopyMotion], apply);
 }
 
-function renderDesktop(progress) {
-  const introT = mix01(progress, ...DESKTOP_PHASE.intro, easeOutCubic);
+function ensureAmbientPlayback(video) {
+  if (!video) return;
+  video.muted = true;
+  video.playsInline = true;
+  video.loop = true;
 
-  const step1ZoomT = mix01(
-    progress,
-    DESKTOP_PHASE.step1[0],
-    DESKTOP_PHASE.step1[1],
-    easeInOutCubic,
-  );
-
-  const step2ZoomT = mix01(
-    progress,
-    DESKTOP_PHASE.step2In[0],
-    DESKTOP_PHASE.step2[1],
-    easeInOutCubic,
-  );
-
-  const stackScale = lerp(
-    layoutCache.stackScaleStart,
-    layoutCache.stackScaleHero,
-    introT,
-  );
-  const stackY = lerp(layoutCache.stackYStart, layoutCache.stackYHero, introT);
-
-  deviceStack.style.transform = `translate3d(-50%, calc(-50% + ${stackY.toFixed(
-    3,
-  )}px), 0) scale(${stackScale.toFixed(5)})`;
-
-  const opacities = getDesktopOpacities(progress);
-
-  setOpacity(plateV1, opacities.v1);
-  setOpacity(phonePlate, opacities.v2);
-  setOpacity(plateV3, opacities.v3);
-
-  const haloOpacity = Math.max(opacities.v2 * 0.42, opacities.v3 * 0.16);
-  setOpacity(phoneHalo, haloOpacity);
-
-  setVisibility(plateV1, opacities.v1 > 0.01);
-  setVisibility(phonePlate, opacities.v2 > 0.01);
-  setVisibility(plateV3, opacities.v3 > 0.01);
-  setVisibility(phoneHalo, haloOpacity > 0.01);
-
-  setTransform(plateV1, 0, 0, 1);
-  setTransform(phonePlate, 0, 0, 1);
-  setTransform(plateV3, 0, 0, 1);
-  setTransform(phoneHalo, 0, 0, 1.03);
-
-  const v1Rect = lerpRect(CROP.v1Start, CROP.v1Hero, step1ZoomT);
-  const v2Rect = lerpRect(CROP.v2Start, CROP.v2Hero, step2ZoomT);
-
-  const sourceV1 = getVideoSource(video1, { width: 1080, height: 1920 });
-  const sourceV2 = getVideoSource(video2, { width: 1920, height: 1080 });
-  const sourceV3 = getVideoSource(video3, { width: 1080, height: 1920 });
-  const v3Rect = getVideo3CropRect(sourceV3);
-
-  setVideoCrop(video1, viewport1, v1Rect, sourceV1, {
-    overscan: 1.001,
-    hairlineFixX: 0,
-    hairlineFixY: 0,
-    snapRectToSourcePixels: true,
-    snapTransformToDevicePixels: true,
-    snapScaleToDevicePixels: true,
-  });
-
-  setVideoCrop(video2, viewport2, v2Rect, sourceV2, {
-    overscan: 1.002,
-    hairlineFixX: 0.25,
-    hairlineFixY: 0.2,
-    snapRectToSourcePixels: false,
-    snapTransformToDevicePixels: false,
-    snapScaleToDevicePixels: false,
-  });
-
-  setVideoCrop(video3, viewport3, v3Rect, sourceV3, {
-    overscan: 0.9,
-    hairlineFixX: 0.5,
-    hairlineFixY: 0.5,
-    snapRectToSourcePixels: true,
-    snapTransformToDevicePixels: true,
-    snapScaleToDevicePixels: true,
-  });
-
-  const heroFade = 1 - mix01(progress, 0.05, 0.14, easeInOutCubic);
-  const scrollFade = 1 - mix01(progress, 0.03, 0.09, easeOutCubic);
-
-  const leftPanelIn = mix01(progress, 0.06, 0.14, easeOutCubic);
-  const rightPanelIn = mix01(progress, 0.09, 0.17, easeOutCubic);
-  const panelsFadeForEnding = 1 - mix01(progress, 0.88, 0.925, easeOutCubic);
-
-  const endingIn = mix01(
-    progress,
-    DESKTOP_PHASE.endingIn[0],
-    DESKTOP_PHASE.endingIn[1],
-    easeOutCubic,
-  );
-
-  setOpacity(heroCopy, heroFade);
-  setOpacity(scrollIndicator, scrollFade);
-  setOpacity(infoPanel, leftPanelIn * panelsFadeForEnding);
-  setOpacity(processPanel, rightPanelIn * panelsFadeForEnding);
-  setOpacity(mobileStoryCard, 0);
-  setOpacity(endingCopy, endingIn);
-
-  heroCopy.style.transform = `translate3d(-50%, ${lerp(
-    0,
-    -18,
-    mix01(progress, 0.02, 0.12, easeOutCubic),
-  ).toFixed(3)}px, 0)`;
-
-  infoPanel.style.transform = `translate3d(${lerp(-26, 0, leftPanelIn).toFixed(3)}px, -50%, 0)`;
-  processPanel.style.transform = `translate3d(${lerp(26, 0, rightPanelIn).toFixed(3)}px, -50%, 0)`;
-
-  endingCopy.style.transform = `translate3d(0, ${lerp(18, 0, endingIn).toFixed(
-    3,
-  )}px, 0) scale(${lerp(0.986, 1, endingIn).toFixed(4)})`;
-
-  plateV1.style.zIndex = progress < DESKTOP_PHASE.step2In[0] ? "3" : "1";
-  phoneHalo.style.zIndex = "2";
-  phonePlate.style.zIndex =
-    progress >= DESKTOP_PHASE.step2In[0] && progress < DESKTOP_PHASE.step3In[0]
-      ? "4"
-      : "2";
-  plateV3.style.zIndex = progress >= DESKTOP_PHASE.step3In[0] ? "5" : "2";
+  const playPromise = video.play();
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise.catch(() => {});
+  }
 }
 
-function renderMobile(progress) {
-  const mobileState = getMobileStepState(progress);
+function pauseVideo(video) {
+  if (!video || video.paused) return;
+  try {
+    video.pause();
+  } catch (_) {}
+}
 
-  deviceStack.style.transform = "translate3d(-50%, -50%, 0) scale(1)";
+function updateLayoutCache() {
+  layoutCache.isMobile = window.innerWidth <= 980;
+}
 
-  const shell1 = getMobileStepShellState(0, progress);
-  const shell2 = getMobileStepShellState(1, progress);
-  const shell3 = getMobileStepShellState(2, progress);
+function updateStoryHeight() {
+  story.style.height = `${STORY_STATION_COUNT * 100}vh`;
+}
 
-  setOpacity(plateV1, shell1.opacity);
-  setOpacity(phonePlate, shell2.opacity);
-  setOpacity(plateV3, shell3.opacity);
+function getStoryMetrics() {
+  const rect = story.getBoundingClientRect();
+  const top = window.scrollY + rect.top;
+  const maxScroll = Math.max(story.offsetHeight - window.innerHeight, 1);
+  return {
+    top,
+    maxScroll,
+    startY: top,
+    endY: top + maxScroll,
+  };
+}
 
-  setVisibility(plateV1, shell1.opacity > 0.01);
-  setVisibility(phonePlate, shell2.opacity > 0.01);
-  setVisibility(plateV3, shell3.opacity > 0.01);
+function getStoryProgress() {
+  const metrics = getStoryMetrics();
+  const current = clamp(window.scrollY - metrics.startY, 0, metrics.maxScroll);
+  return clamp(current / metrics.maxScroll, 0, 1);
+}
 
-  setTransform(plateV1, 0, shell1.y, shell1.scale);
-  setTransform(phonePlate, 0, shell2.y, shell2.scale);
-  setTransform(plateV3, 0, shell3.y, shell3.scale);
+function progressToPageY(progress) {
+  const metrics = getStoryMetrics();
+  return metrics.startY + metrics.maxScroll * clamp(progress, 0, 1);
+}
 
-  const haloOpacity = Math.max(
-    shell1.opacity * 0.16,
-    shell2.opacity * 0.24,
-    shell3.opacity * 0.24,
-  );
-  const haloScale =
-    shell3.opacity > shell2.opacity && shell3.opacity > shell1.opacity
-      ? shell3.scale + 0.035
-      : shell2.opacity > shell1.opacity
-        ? shell2.scale + 0.035
-        : shell1.scale + 0.03;
-  const haloY =
-    shell3.opacity > shell2.opacity && shell3.opacity > shell1.opacity
-      ? shell3.y
-      : shell2.opacity > shell1.opacity
-        ? shell2.y
-        : shell1.y;
+function getStoryStationPageY(index) {
+  const clamped = clamp(index, 0, STORY_STATION_COUNT - 1);
+  return progressToPageY(clamped / (STORY_STATION_COUNT - 1));
+}
 
-  setOpacity(phoneHalo, haloOpacity);
-  setVisibility(phoneHalo, haloOpacity > 0.01);
-  setTransform(phoneHalo, 0, haloY, haloScale);
+function getDemoStationPageY() {
+  return demoSection.offsetTop;
+}
 
-  const v1MobileT = mix01(
-    progress,
-    MOBILE_PHASE.step1Show[0],
-    MOBILE_PHASE.step1Detail[1],
-    easeInOutCubic,
-  );
-  const v2MobileT = mix01(
-    progress,
-    MOBILE_PHASE.step2Show[0],
-    MOBILE_PHASE.step2Detail[1],
-    easeInOutCubic,
-  );
+function getGlobalStationPageY(index) {
+  if (index <= STORY_STATION_COUNT - 1) {
+    return getStoryStationPageY(index);
+  }
+  return getDemoStationPageY();
+}
 
-  const v1Rect = lerpRect(CROP.v1Start, CROP.v1Hero, v1MobileT);
-  const v2Rect = lerpRect(CROP.v2Start, CROP.v2Hero, v2MobileT);
+function getClosestGlobalStationIndex() {
+  const y = window.scrollY;
+  let closestIndex = 0;
+  let closestDistance = Infinity;
 
-  const sourceV1 = getVideoSource(video1, { width: 1080, height: 1920 });
-  const sourceV2 = getVideoSource(video2, { width: 1920, height: 1080 });
-  const sourceV3 = getVideoSource(video3, { width: 1080, height: 1920 });
-  const v3Rect = getVideo3CropRect(sourceV3);
-
-  setVideoCrop(video1, viewport1, v1Rect, sourceV1, {
-    overscan: 1.002,
-    hairlineFixX: 0,
-    hairlineFixY: 0,
-    snapRectToSourcePixels: true,
-    snapTransformToDevicePixels: true,
-    snapScaleToDevicePixels: true,
-  });
-
-  setVideoCrop(video2, viewport2, v2Rect, sourceV2, {
-    overscan: 1.002,
-    hairlineFixX: 0.2,
-    hairlineFixY: 0.15,
-    snapRectToSourcePixels: false,
-    snapTransformToDevicePixels: false,
-    snapScaleToDevicePixels: false,
-  });
-
-  setVideoCrop(video3, viewport3, v3Rect, sourceV3, {
-    overscan: 0.92,
-    hairlineFixX: 0.4,
-    hairlineFixY: 0.4,
-    snapRectToSourcePixels: true,
-    snapTransformToDevicePixels: true,
-    snapScaleToDevicePixels: true,
-  });
-
-  const heroFade = 1 - mix01(progress, 0.05, 0.14, easeInOutCubic);
-
-  const cardReveal = clamp(mobileState.detailT, 0, 1);
-  const cardOpacity =
-    cardReveal * (1 - mobileState.crossToNext) * (1 - mobileState.endingT);
-  const cardTranslateY = lerp(TUNE.mobileCardEnterY, 0, cardReveal);
-
-  const endingIn = mobileState.endingT;
-
-  setOpacity(heroCopy, heroFade * (1 - endingIn * 0.8));
-  setOpacity(scrollIndicator, 0);
-  setOpacity(infoPanel, 0);
-  setOpacity(processPanel, 0);
-  setOpacity(mobileStoryCard, cardOpacity);
-  setOpacity(endingCopy, endingIn);
-
-  heroCopy.style.transform = `translate3d(-50%, ${lerp(
-    0,
-    -14,
-    mix01(progress, 0.02, 0.12, easeOutCubic),
-  ).toFixed(3)}px, 0)`;
-
-  const cardX = mobileState.step === 1 ? 4 : mobileState.step === 2 ? -3 : 0;
-
-  mobileStoryCard.style.transform = `translate3d(calc(-50% + ${cardX.toFixed(
-    3,
-  )}px), ${cardTranslateY.toFixed(3)}px, 0)`;
-
-  endingCopy.style.transform = `translate3d(0, ${lerp(18, 0, endingIn).toFixed(
-    3,
-  )}px, 0) scale(${lerp(0.986, 1, endingIn).toFixed(4)})`;
-
-  if (shell1.opacity >= shell2.opacity && shell1.opacity >= shell3.opacity) {
-    plateV1.style.zIndex = "4";
-    phonePlate.style.zIndex = "2";
-    plateV3.style.zIndex = "1";
-  } else if (shell2.opacity >= shell3.opacity) {
-    plateV1.style.zIndex = "1";
-    phonePlate.style.zIndex = "4";
-    plateV3.style.zIndex = "2";
-  } else {
-    plateV1.style.zIndex = "1";
-    phonePlate.style.zIndex = "2";
-    plateV3.style.zIndex = "4";
+  for (let i = 0; i <= GLOBAL_DEMO_INDEX; i += 1) {
+    const stationY = getGlobalStationPageY(i);
+    const distance = Math.abs(y - stationY);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = i;
+    }
   }
 
-  phoneHalo.style.zIndex = "3";
+  return closestIndex;
 }
 
-function renderScene(progress) {
-  const renderKey = `${progress.toFixed(5)}|${window.innerWidth}|${window.innerHeight}|${rafResizeCounter}`;
-  if (renderKey === lastRenderKey) return;
-  lastRenderKey = renderKey;
+function syncCurrentStationFromScroll() {
+  const index = getClosestGlobalStationIndex();
+  snapState.currentIndex = index;
+  snapState.requestedIndex = index;
+}
 
-  manageVideoActivity(progress);
-  updateCopyAndProgress(progress);
+function isSnapRegionActive() {
+  const storyMetrics = getStoryMetrics();
+  const y = window.scrollY;
+  const demoTop = getDemoStationPageY();
+  const lowerBound = storyMetrics.startY - 2;
+  const upperBound = demoTop + Math.max(window.innerHeight * 0.15, 80);
+  return y >= lowerBound && y <= upperBound;
+}
 
-  if (layoutCache.isMobile) {
-    renderMobile(progress);
-  } else {
-    renderDesktop(progress);
+function isInsideStoryRegion() {
+  const storyMetrics = getStoryMetrics();
+  const y = window.scrollY;
+  return y >= storyMetrics.startY - 2 && y <= storyMetrics.endY + 2;
+}
+
+function cancelSnapAnimation() {
+  if (snapState.animationFrame) {
+    cancelAnimationFrame(snapState.animationFrame);
+    snapState.animationFrame = 0;
+  }
+  snapState.isAnimating = false;
+}
+
+function animateWindowScrollTo(targetY, duration = 900, onDone) {
+  cancelSnapAnimation();
+
+  const startY = window.scrollY;
+  const delta = targetY - startY;
+
+  if (Math.abs(delta) < 1 || prefersReducedMotion) {
+    window.scrollTo(0, targetY);
+    snapState.isAnimating = false;
+    onDone?.();
+    return;
   }
 
-  video1.style.filter = "brightness(1) contrast(1.01) saturate(1.01)";
-  video2.style.filter = "brightness(1) contrast(1.01) saturate(1.01)";
-  video3.style.filter = "none";
+  snapState.isAnimating = true;
+  const startTime = performance.now();
 
-  const baseLift = layoutCache.isMobile
-    ? lerp(2, -2, mix01(progress, 0.02, 0.12, easeOutCubic))
-    : lerp(2, -4, mix01(progress, 0.0, 0.12, easeOutCubic));
+  const step = (now) => {
+    const t = clamp((now - startTime) / duration, 0, 1);
+    const eased = easeInOutCubic(t);
+    window.scrollTo(0, startY + delta * eased);
+    state.lastRenderKey = "";
 
-  const stageGlow =
-    0.11 +
-    lerp(0, 0.03, mix01(progress, 0.02, 0.22, easeOutCubic)) +
-    lerp(0, 0.035, mix01(progress, 0.36, 0.62, easeOutCubic)) +
-    lerp(0, 0.02, mix01(progress, 0.76, 0.92, easeOutCubic));
+    if (t < 1) {
+      snapState.animationFrame = requestAnimationFrame(step);
+      return;
+    }
 
-  const demoBlend = layoutCache.isMobile
-    ? mix01(progress, 0.988, 1.0, easeOutQuart)
-    : mix01(progress, 0.985, 1.0, easeOutQuart);
+    window.scrollTo(0, targetY);
+    snapState.animationFrame = 0;
+    snapState.isAnimating = false;
+    state.lastRenderKey = "";
+    onDone?.();
+  };
 
-  stage.style.setProperty("--hero-lift", `${baseLift.toFixed(3)}px`);
-  stage.style.setProperty("--global-glow", stageGlow.toFixed(4));
-  stage.style.setProperty("--global-contrast", "1.01");
-  stage.style.setProperty("--global-saturate", "1.01");
-  stage.style.setProperty("--demo-blend", demoBlend.toFixed(4));
+  snapState.animationFrame = requestAnimationFrame(step);
 }
 
-function tick(now) {
-  rafId = requestAnimationFrame(tick);
+function snapToIndex(index, options = {}) {
+  const clampedIndex = clamp(index, 0, GLOBAL_DEMO_INDEX);
+  const targetY = getGlobalStationPageY(clampedIndex);
+  const duration =
+    options.duration ??
+    (layoutCache.isMobile ? TUNE.snapDurationMobile : TUNE.snapDurationDesktop);
 
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
+  snapState.requestedIndex = clampedIndex;
+  snapState.lockUntil = performance.now() + duration + TUNE.snapCooldown;
+  document.body.classList.add("is-snap-locked");
 
-  targetProgress = getStoryProgress();
-  smoothProgress = prefersReducedMotion
-    ? targetProgress
-    : damp(smoothProgress, targetProgress, TUNE.scrollSmoothing, dt);
+  if (prefersReducedMotion || options.instant) {
+    cancelSnapAnimation();
+    window.scrollTo(0, targetY);
+    snapState.currentIndex = clampedIndex;
+    snapState.requestedIndex = clampedIndex;
+    state.lastRenderKey = "";
+    document.body.classList.remove("is-snap-locked");
+    return;
+  }
 
-  renderScene(smoothProgress);
-}
-
-function requestResizeRecalc() {
-  if (resizeRaf) return;
-
-  resizeRaf = requestAnimationFrame(() => {
-    resizeRaf = 0;
-    rafResizeCounter += 1;
-    updateStoryHeight();
-    updateLayoutCache();
-    lastRenderKey = "";
-    renderScene(smoothProgress);
-    syncCurrentStationFromScroll();
+  animateWindowScrollTo(targetY, duration, () => {
+    snapState.currentIndex = clampedIndex;
+    snapState.requestedIndex = clampedIndex;
+    document.body.classList.remove("is-snap-locked");
   });
+}
+
+function snapToNearestStation() {
+  if (!isSnapRegionActive()) return;
+  if (snapState.isAnimating) return;
+  snapToIndex(getClosestGlobalStationIndex(), {
+    duration: layoutCache.isMobile ? 720 : 680,
+  });
+}
+
+function getNextSnapIndex(direction) {
+  const baseIndex = snapState.isAnimating
+    ? snapState.requestedIndex
+    : snapState.currentIndex;
+
+  if (direction > 0) return clamp(baseIndex + 1, 0, GLOBAL_DEMO_INDEX);
+  if (direction < 0) return clamp(baseIndex - 1, 0, GLOBAL_DEMO_INDEX);
+  return baseIndex;
+}
+
+function releaseWheelLockLater() {
+  if (snapState.wheelTimer) clearTimeout(snapState.wheelTimer);
+  snapState.wheelTimer = window.setTimeout(() => {
+    snapState.wheelLocked = false;
+  }, 640);
 }
 
 function nudgeFirstFrame(video) {
@@ -1468,7 +647,7 @@ function primeVideo(video) {
 
   const onReady = () => {
     ensureAmbientPlayback(video);
-    lastRenderKey = "";
+    state.lastRenderKey = "";
   };
 
   video.addEventListener("loadedmetadata", onReady, { passive: true });
@@ -1482,12 +661,407 @@ function primeVideo(video) {
   ensureAmbientPlayback(video);
 }
 
+function getStorySegment(progress) {
+  const scaled = clamp(progress, 0, 1) * (STORY_STATION_COUNT - 1);
+  const index = clamp(Math.floor(scaled), 0, STORY_STATION_COUNT - 2);
+  const local = clamp(scaled - index, 0, 1);
+
+  return {
+    index,
+    local,
+    fromKey: STORY_STATE_KEYS[index],
+    toKey: STORY_STATE_KEYS[index + 1],
+  };
+}
+
+function getPose(key) {
+  return layoutCache.isMobile ? MOBILE_POSES[key] : DESKTOP_POSES[key];
+}
+
+function getStepIndexForState(key) {
+  if (key === "hero" || key === "v1Focus" || key === "v1Detail") return 0;
+  if (key === "v2Focus" || key === "v2Detail") return 1;
+  if (key === "v3Focus" || key === "v3Detail" || key === "ending") return 2;
+  return 0;
+}
+
+function getCopyForState(key) {
+  if (key === "v1Detail") return COPY.activation;
+  if (key === "v2Detail") return COPY.creation;
+  if (key === "v3Detail") return COPY.delivery;
+  if (key === "v2Focus") return COPY.creation;
+  if (key === "v3Focus" || key === "ending") return COPY.delivery;
+  return COPY.activation;
+}
+
+function getVideoForState(key) {
+  if (key === "hero" || key === "v1Focus" || key === "v1Detail") return 1;
+  if (key === "v2Focus" || key === "v2Detail") return 2;
+  if (key === "v3Focus" || key === "v3Detail") return 3;
+  return 0;
+}
+
+function getFocusCrop(videoIndex, focusT) {
+  if (videoIndex === 1) {
+    return lerpRect(CROP.v1Start, CROP.v1Hero, focusT);
+  }
+
+  if (videoIndex === 2) {
+    return lerpRect(CROP.v2Start, CROP.v2Hero, focusT);
+  }
+
+  const sourceV3 = getVideoSource(video3, { width: 1080, height: 1920 });
+  return getVideo3CropRect(sourceV3);
+}
+
+function renderProgressUI(segment) {
+  const progressSteps = [14, 36, 68, 100];
+  const fromStep = getStepIndexForState(segment.fromKey);
+  const toStep = getStepIndexForState(segment.toKey);
+  const fromValue = progressSteps[fromStep];
+  const toValue = progressSteps[toStep];
+  const width = lerp(fromValue, toValue, segment.local);
+
+  progressFill.style.width = `${width.toFixed(2)}%`;
+  mobileProgressFill.style.width = `${width.toFixed(2)}%`;
+  setActiveStep(Math.round(lerp(fromStep, toStep, segment.local)));
+}
+
+function applyShellState(shell, opacity, y, scale, zIndex) {
+  setOpacity(shell, opacity);
+  setVisibility(shell, opacity > 0.01);
+  setTransform(shell, 0, y, scale);
+  shell.style.zIndex = String(zIndex);
+}
+
+function renderVideos(segment) {
+  const { fromKey, toKey, local } = segment;
+  const fromVideo = getVideoForState(fromKey);
+  const toVideo = getVideoForState(toKey);
+
+  const sameVideo = fromVideo === toVideo;
+  const splitFadeOut = sameVideo ? 1 : 1 - clamp(local / 0.48, 0, 1);
+  const splitFadeIn = sameVideo ? 1 : clamp((local - 0.52) / 0.48, 0, 1);
+
+  const poseFrom = getPose(fromKey);
+  const poseTo = getPose(toKey);
+
+  const v1Opacity =
+    fromVideo === 1 ? splitFadeOut : toVideo === 1 ? splitFadeIn : 0;
+
+  const v2Opacity =
+    fromVideo === 2 ? splitFadeOut : toVideo === 2 ? splitFadeIn : 0;
+
+  const v3Opacity =
+    fromVideo === 3 ? splitFadeOut : toVideo === 3 ? splitFadeIn : 0;
+
+  let v1Y = poseFrom?.y ?? 0;
+  let v1Scale = poseFrom?.scale ?? 1;
+  let v2Y = poseFrom?.y ?? 0;
+  let v2Scale = poseFrom?.scale ?? 1;
+  let v3Y = poseFrom?.y ?? 0;
+  let v3Scale = poseFrom?.scale ?? 1;
+
+  if (sameVideo) {
+    const y = lerp(poseFrom.y, poseTo.y, local);
+    const scale = lerp(poseFrom.scale, poseTo.scale, local);
+    if (fromVideo === 1) {
+      v1Y = y;
+      v1Scale = scale;
+    }
+    if (fromVideo === 2) {
+      v2Y = y;
+      v2Scale = scale;
+    }
+    if (fromVideo === 3) {
+      v3Y = y;
+      v3Scale = scale;
+    }
+  } else {
+    if (fromVideo === 1) {
+      v1Y = poseFrom.y;
+      v1Scale = poseFrom.scale;
+    }
+    if (fromVideo === 2) {
+      v2Y = poseFrom.y;
+      v2Scale = poseFrom.scale;
+    }
+    if (fromVideo === 3) {
+      v3Y = poseFrom.y;
+      v3Scale = poseFrom.scale;
+    }
+
+    if (toVideo === 1) {
+      v1Y = poseTo.y;
+      v1Scale = poseTo.scale;
+    }
+    if (toVideo === 2) {
+      v2Y = poseTo.y;
+      v2Scale = poseTo.scale;
+    }
+    if (toVideo === 3) {
+      v3Y = poseTo.y;
+      v3Scale = poseTo.scale;
+    }
+  }
+
+  applyShellState(plateV1, v1Opacity, v1Y, v1Scale, v1Opacity > 0 ? 5 : 1);
+  applyShellState(phonePlate, v2Opacity, v2Y, v2Scale, v2Opacity > 0 ? 5 : 1);
+  applyShellState(plateV3, v3Opacity, v3Y, v3Scale, v3Opacity > 0 ? 5 : 1);
+
+  const haloOpacity = Math.max(v1Opacity, v2Opacity, v3Opacity) * 0.22;
+  const haloY =
+    v1Opacity >= v2Opacity && v1Opacity >= v3Opacity
+      ? v1Y
+      : v2Opacity >= v3Opacity
+        ? v2Y
+        : v3Y;
+  const haloScale =
+    v1Opacity >= v2Opacity && v1Opacity >= v3Opacity
+      ? v1Scale + 0.03
+      : v2Opacity >= v3Opacity
+        ? v2Scale + 0.03
+        : v3Scale + 0.03;
+
+  setOpacity(phoneHalo, haloOpacity);
+  setVisibility(phoneHalo, haloOpacity > 0.01);
+  setTransform(phoneHalo, 0, haloY, haloScale);
+  phoneHalo.style.zIndex = "4";
+
+  const focusT1 =
+    fromKey === "hero"
+      ? local
+      : fromKey === "v1Focus" && toKey === "v1Detail"
+        ? 1
+        : fromKey === "v1Detail"
+          ? 1
+          : toKey === "v1Focus"
+            ? 1
+            : 0;
+
+  const focusT2 =
+    fromKey === "v2Focus" && toKey === "v2Detail"
+      ? 1
+      : fromKey === "v2Detail"
+        ? 1
+        : toKey === "v2Focus"
+          ? 1
+          : 0;
+
+  const sourceV1 = getVideoSource(video1, { width: 1080, height: 1920 });
+  const sourceV2 = getVideoSource(video2, { width: 1920, height: 1080 });
+  const sourceV3 = getVideoSource(video3, { width: 1080, height: 1920 });
+
+  setVideoCrop(video1, viewport1, getFocusCrop(1, focusT1), sourceV1, {
+    overscan: 1.001,
+    hairlineFixX: 0,
+    hairlineFixY: 0,
+    snapRectToSourcePixels: true,
+    snapTransformToDevicePixels: true,
+    snapScaleToDevicePixels: true,
+  });
+
+  setVideoCrop(video2, viewport2, getFocusCrop(2, focusT2), sourceV2, {
+    overscan: 1.002,
+    hairlineFixX: 0.25,
+    hairlineFixY: 0.2,
+    snapRectToSourcePixels: false,
+    snapTransformToDevicePixels: false,
+    snapScaleToDevicePixels: false,
+  });
+
+  setVideoCrop(video3, viewport3, getVideo3CropRect(sourceV3), sourceV3, {
+    overscan: 0.92,
+    hairlineFixX: 0.4,
+    hairlineFixY: 0.4,
+    snapRectToSourcePixels: true,
+    snapTransformToDevicePixels: true,
+    snapScaleToDevicePixels: true,
+  });
+
+  video1.style.filter = "brightness(1) contrast(1.01) saturate(1.01)";
+  video2.style.filter = "brightness(1) contrast(1.01) saturate(1.01)";
+  video3.style.filter = "none";
+}
+
+function renderTextLayers(segment) {
+  const { fromKey, toKey, local } = segment;
+  const showHero =
+    (fromKey === "hero" && (toKey === "v1Focus" ? 1 - local : 1)) ||
+    (toKey === "hero" ? local : 0);
+
+  const endingFrom = fromKey === "ending" ? 1 : 0;
+  const endingTo = toKey === "ending" ? 1 : 0;
+  const endingOpacity = lerp(endingFrom, endingTo, local);
+
+  const detailFrom =
+    fromKey === "v1Detail" || fromKey === "v2Detail" || fromKey === "v3Detail"
+      ? 1
+      : 0;
+  const detailTo =
+    toKey === "v1Detail" || toKey === "v2Detail" || toKey === "v3Detail"
+      ? 1
+      : 0;
+  const detailOpacity = lerp(detailFrom, detailTo, local) * (1 - endingOpacity);
+
+  const activeCopy =
+    detailTo > detailFrom ? getCopyForState(toKey) : getCopyForState(fromKey);
+  if (detailOpacity > 0.08) {
+    setInfoCopy(activeCopy);
+  }
+
+  setOpacity(heroCopy, showHero * (1 - endingOpacity * 0.6));
+  setOpacity(scrollIndicator, showHero > 0.08 ? showHero : 0);
+
+  if (layoutCache.isMobile) {
+    setOpacity(infoPanel, 0);
+    setOpacity(processPanel, 0);
+    setOpacity(mobileStoryCard, detailOpacity);
+
+    const cardY = lerp(28, 0, detailOpacity);
+    mobileStoryCard.style.transform = `translate3d(-50%, ${cardY.toFixed(3)}px, 0)`;
+  } else {
+    setOpacity(infoPanel, detailOpacity);
+    setOpacity(processPanel, detailOpacity);
+    setOpacity(mobileStoryCard, 0);
+
+    infoPanel.style.transform = `translate3d(${lerp(-20, 0, detailOpacity).toFixed(3)}px, -50%, 0)`;
+    processPanel.style.transform = `translate3d(${lerp(20, 0, detailOpacity).toFixed(3)}px, -50%, 0)`;
+  }
+
+  setOpacity(endingCopy, endingOpacity);
+  endingCopy.style.transform = `translate3d(0, ${lerp(
+    18,
+    0,
+    endingOpacity,
+  ).toFixed(3)}px, 0) scale(${lerp(0.986, 1, endingOpacity).toFixed(4)})`;
+
+  heroCopy.style.transform = `translate3d(-50%, ${lerp(
+    0,
+    -14,
+    clamp(1 - showHero, 0, 1),
+  ).toFixed(3)}px, 0)`;
+}
+
+function updateCopyAndSteps(segment) {
+  const visibleKey = segment.local < 0.5 ? segment.fromKey : segment.toKey;
+  const content = getCopyForState(visibleKey);
+  if (
+    visibleKey === "v1Detail" ||
+    visibleKey === "v2Detail" ||
+    visibleKey === "v3Detail" ||
+    visibleKey === "v2Focus" ||
+    visibleKey === "v3Focus" ||
+    visibleKey === "ending"
+  ) {
+    setInfoCopy(content);
+  }
+
+  renderProgressUI(segment);
+}
+
+function manageVideoActivity(segment) {
+  if (!state.sceneVisible) {
+    pauseVideo(video1);
+    pauseVideo(video2);
+    pauseVideo(video3);
+    return;
+  }
+
+  const visibleVideos = new Set([
+    getVideoForState(segment.fromKey),
+    getVideoForState(segment.toKey),
+  ]);
+
+  if (visibleVideos.has(1)) ensureAmbientPlayback(video1);
+  else pauseVideo(video1);
+
+  if (visibleVideos.has(2)) ensureAmbientPlayback(video2);
+  else pauseVideo(video2);
+
+  if (visibleVideos.has(3)) ensureAmbientPlayback(video3);
+  else pauseVideo(video3);
+}
+
+function renderScene(progress) {
+  const renderKey = `${progress.toFixed(5)}|${window.innerWidth}|${window.innerHeight}`;
+  if (renderKey === state.lastRenderKey) return;
+  state.lastRenderKey = renderKey;
+
+  const segment = getStorySegment(progress);
+
+  manageVideoActivity(segment);
+  updateCopyAndSteps(segment);
+  renderVideos(segment);
+  renderTextLayers(segment);
+
+  deviceStack.style.transform = "translate3d(-50%, -50%, 0) scale(1)";
+
+  const stageGlow =
+    0.11 +
+    lerp(0, 0.03, invLerp(progress, 0, 0.22)) +
+    lerp(0, 0.035, invLerp(progress, 0.28, 0.58)) +
+    lerp(0, 0.02, invLerp(progress, 0.62, 0.92));
+
+  const demoBlend = invLerp(progress, 0.94, 1);
+  stage.style.setProperty(
+    "--hero-lift",
+    `${lerp(2, -4, progress).toFixed(3)}px`,
+  );
+  stage.style.setProperty("--global-glow", stageGlow.toFixed(4));
+  stage.style.setProperty("--global-contrast", "1.01");
+  stage.style.setProperty("--global-saturate", "1.01");
+  stage.style.setProperty("--demo-blend", demoBlend.toFixed(4));
+}
+
+function tick(now) {
+  state.rafId = requestAnimationFrame(tick);
+
+  const dt = Math.min((now - state.lastTime) / 1000, 0.05);
+  state.lastTime = now;
+
+  state.targetProgress = getStoryProgress();
+  state.smoothProgress = prefersReducedMotion
+    ? state.targetProgress
+    : damp(
+        state.smoothProgress,
+        state.targetProgress,
+        TUNE.scrollSmoothing,
+        dt,
+      );
+
+  renderScene(state.smoothProgress);
+}
+
+function requestResizeRecalc() {
+  if (state.resizeRaf) return;
+
+  state.resizeRaf = requestAnimationFrame(() => {
+    state.resizeRaf = 0;
+    updateLayoutCache();
+    updateStoryHeight();
+    state.lastRenderKey = "";
+    renderScene(state.smoothProgress);
+    syncCurrentStationFromScroll();
+  });
+}
+
+function handleDirectionalSnap(direction) {
+  if (!isSnapRegionActive()) return false;
+  if (snapState.isAnimating) return true;
+  if (performance.now() < snapState.lockUntil) return true;
+
+  const targetIndex = getNextSnapIndex(direction);
+  snapToIndex(targetIndex);
+  return true;
+}
+
 const observer = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
-      sceneVisible = entry.isIntersecting;
+      state.sceneVisible = entry.isIntersecting;
 
-      if (!sceneVisible) {
+      if (!state.sceneVisible) {
         pauseVideo(video1);
         pauseVideo(video2);
         pauseVideo(video3);
@@ -1495,7 +1069,7 @@ const observer = new IntersectionObserver(
         ensureAmbientPlayback(video1);
         ensureAmbientPlayback(video2);
         ensureAmbientPlayback(video3);
-        lastRenderKey = "";
+        state.lastRenderKey = "";
       }
     });
   },
@@ -1503,12 +1077,6 @@ const observer = new IntersectionObserver(
 );
 
 observer.observe(story);
-
-const resizeObserver = new ResizeObserver(() => {
-  requestResizeRecalc();
-});
-
-resizeObserver.observe(document.documentElement);
 
 window.addEventListener("resize", requestResizeRecalc, { passive: true });
 window.addEventListener("orientationchange", requestResizeRecalc, {
@@ -1518,16 +1086,16 @@ window.addEventListener("orientationchange", requestResizeRecalc, {
 window.addEventListener(
   "scroll",
   () => {
-    lastRenderKey = "";
+    state.lastRenderKey = "";
 
     if (snapState.releaseSnapTimer) {
       clearTimeout(snapState.releaseSnapTimer);
     }
 
-    if (!snapState.isAnimating && isStoryScrollLockedRegion()) {
-      snapState.releaseSnapTimer = setTimeout(() => {
+    if (!snapState.isAnimating && isSnapRegionActive()) {
+      snapState.releaseSnapTimer = window.setTimeout(() => {
         snapToNearestStation();
-      }, 120);
+      }, 110);
     }
   },
   { passive: true },
@@ -1537,32 +1105,43 @@ window.addEventListener(
   "wheel",
   (event) => {
     if (prefersReducedMotion) return;
-    if (!isStoryScrollLockedRegion()) return;
+    if (!isSnapRegionActive()) return;
 
     event.preventDefault();
 
-    if (snapState.wheelGestureLocked || snapState.isAnimating) return;
+    if (snapState.wheelLocked || snapState.isAnimating) return;
     if (performance.now() < snapState.lockUntil) return;
 
     const deltaY = event.deltaY || 0;
-    if (Math.abs(deltaY) < 4) return;
+    if (Math.abs(deltaY) < TUNE.wheelThreshold) return;
+
+    snapState.wheelLocked = true;
+    releaseWheelLockLater();
 
     const direction = deltaY > 0 ? 1 : -1;
-    const targetIndex = getNextStationIndex(direction);
+    handleDirectionalSnap(direction);
+  },
+  { passive: false },
+);
 
-    if (targetIndex === snapState.currentStationIndex) {
-      snapState.wheelGestureLocked = true;
-      releaseWheelGestureLockLater();
-      snapToNearestStation();
+window.addEventListener(
+  "keydown",
+  (event) => {
+    if (prefersReducedMotion) return;
+    if (!isSnapRegionActive()) return;
+
+    const key = event.key;
+
+    if (key === "ArrowDown" || key === "PageDown" || key === " ") {
+      event.preventDefault();
+      handleDirectionalSnap(1);
       return;
     }
 
-    snapState.wheelGestureLocked = true;
-    releaseWheelGestureLockLater();
-
-    snapToStationIndex(targetIndex, {
-      duration: layoutCache.isMobile ? 1260 : 1160,
-    });
+    if (key === "ArrowUp" || key === "PageUp") {
+      event.preventDefault();
+      handleDirectionalSnap(-1);
+    }
   },
   { passive: false },
 );
@@ -1571,13 +1150,11 @@ window.addEventListener(
   "touchstart",
   (event) => {
     if (!event.touches || !event.touches.length) return;
+    if (prefersReducedMotion) return;
 
-    snapState.touchActive =
-      isStoryScrollLockedRegion() && !prefersReducedMotion;
-    snapState.touchMoved = false;
+    snapState.touchActive = isSnapRegionActive();
     snapState.touchTriggered = false;
     snapState.touchStartY = event.touches[0].clientY;
-    snapState.touchLastY = event.touches[0].clientY;
   },
   { passive: true },
 );
@@ -1590,31 +1167,17 @@ window.addEventListener(
 
     event.preventDefault();
 
-    snapState.touchMoved = true;
-    snapState.touchLastY = event.touches[0].clientY;
-
     if (snapState.touchTriggered || snapState.isAnimating) return;
     if (performance.now() < snapState.lockUntil) return;
 
-    const deltaY = snapState.touchLastY - snapState.touchStartY;
-    const absDeltaY = Math.abs(deltaY);
-    const swipeThreshold = Math.max(16, window.innerHeight * 0.02);
+    const currentY = event.touches[0].clientY;
+    const deltaY = currentY - snapState.touchStartY;
 
-    if (absDeltaY < swipeThreshold) return;
+    if (Math.abs(deltaY) < TUNE.touchThreshold) return;
 
     snapState.touchTriggered = true;
-
     const direction = deltaY < 0 ? 1 : -1;
-    const targetIndex = getNextStationIndex(direction);
-
-    if (targetIndex === snapState.currentStationIndex) {
-      snapToNearestStation();
-      return;
-    }
-
-    snapToStationIndex(targetIndex, {
-      duration: layoutCache.isMobile ? 1320 : 1200,
-    });
+    handleDirectionalSnap(direction);
   },
   { passive: false },
 );
@@ -1627,10 +1190,11 @@ window.addEventListener(
 
     snapState.touchActive = false;
 
-    if (!isStoryScrollLockedRegion()) return;
-    if (snapState.isAnimating) return;
-
-    if (!snapState.touchTriggered) {
+    if (
+      !snapState.touchTriggered &&
+      !snapState.isAnimating &&
+      isSnapRegionActive()
+    ) {
       snapToNearestStation();
     }
   },
@@ -1638,34 +1202,26 @@ window.addEventListener(
 );
 
 window.addEventListener("load", () => {
-  updateStoryHeight();
   updateLayoutCache();
+  updateStoryHeight();
   setInfoCopy(COPY.activation, true);
 
   primeVideo(video1);
   primeVideo(video2);
   primeVideo(video3);
 
-  smoothProgress = getStoryProgress();
+  state.smoothProgress = getStoryProgress();
   syncCurrentStationFromScroll();
-  renderScene(smoothProgress);
-  rafId = requestAnimationFrame(tick);
+  renderScene(state.smoothProgress);
+  state.rafId = requestAnimationFrame(tick);
 
   setTimeout(() => {
-    updateStoryHeight();
     updateLayoutCache();
-    lastRenderKey = "";
-    renderScene(smoothProgress);
-    syncCurrentStationFromScroll();
-  }, 140);
-
-  setTimeout(() => {
     updateStoryHeight();
-    updateLayoutCache();
-    lastRenderKey = "";
-    renderScene(smoothProgress);
+    state.lastRenderKey = "";
+    renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
-  }, 420);
+  }, 180);
 });
 
 document.addEventListener("visibilitychange", () => {
@@ -1679,21 +1235,15 @@ document.addEventListener("visibilitychange", () => {
   ensureAmbientPlayback(video1);
   ensureAmbientPlayback(video2);
   ensureAmbientPlayback(video3);
-  lastTime = performance.now();
-  lastRenderKey = "";
+  state.lastTime = performance.now();
+  state.lastRenderKey = "";
 });
 
 window.addEventListener("beforeunload", () => {
-  cancelAnimationFrame(rafId);
+  cancelAnimationFrame(state.rafId);
   cancelSnapAnimation();
   observer.disconnect();
-  resizeObserver.disconnect();
 
-  if (snapState.wheelGestureTimer) {
-    clearTimeout(snapState.wheelGestureTimer);
-  }
-
-  if (snapState.releaseSnapTimer) {
-    clearTimeout(snapState.releaseSnapTimer);
-  }
+  if (snapState.wheelTimer) clearTimeout(snapState.wheelTimer);
+  if (snapState.releaseSnapTimer) clearTimeout(snapState.releaseSnapTimer);
 });
