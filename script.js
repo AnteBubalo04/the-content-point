@@ -397,6 +397,8 @@ const MOBILE_POSES = {
 const state = {
   rafId: 0,
   resizeRaf: 0,
+  mobileReadyRafA: 0,
+  mobileReadyRafB: 0,
   lastTime: performance.now(),
   targetProgress: 0,
   smoothProgress: 0,
@@ -583,6 +585,47 @@ function clearCopySwapTimer() {
     clearTimeout(state.copySwapTimer);
     state.copySwapTimer = 0;
   }
+}
+
+function clearMobileReadyFrames() {
+  if (state.mobileReadyRafA) {
+    cancelAnimationFrame(state.mobileReadyRafA);
+    state.mobileReadyRafA = 0;
+  }
+  if (state.mobileReadyRafB) {
+    cancelAnimationFrame(state.mobileReadyRafB);
+    state.mobileReadyRafB = 0;
+  }
+}
+
+function setMobileStoryReady(isReady) {
+  if (!document.body) return;
+  document.body.classList.toggle(
+    "mobile-story-ready",
+    Boolean(isReady && layoutCache.isMobile),
+  );
+}
+
+function resetMobileStoryReady() {
+  clearMobileReadyFrames();
+  setMobileStoryReady(false);
+}
+
+function queueMobileStoryReady() {
+  clearMobileReadyFrames();
+
+  if (!layoutCache.isMobile) {
+    setMobileStoryReady(false);
+    return;
+  }
+
+  state.mobileReadyRafA = requestAnimationFrame(() => {
+    state.mobileReadyRafA = 0;
+    state.mobileReadyRafB = requestAnimationFrame(() => {
+      state.mobileReadyRafB = 0;
+      setMobileStoryReady(true);
+    });
+  });
 }
 
 function animateSwap(nodes, onMidpoint, onComplete) {
@@ -1493,6 +1536,8 @@ function requestResizeRecalc() {
 
   state.resizeRaf = requestAnimationFrame(() => {
     state.resizeRaf = 0;
+
+    resetMobileStoryReady();
     updateLayoutCache();
     updateStoryHeight();
     state.lastRenderKey = "";
@@ -1500,6 +1545,7 @@ function requestResizeRecalc() {
     state.lastMobileLayoutKey = "";
     renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
+    queueMobileStoryReady();
   });
 }
 
@@ -1692,6 +1738,7 @@ window.addEventListener(
 langToggle?.addEventListener("click", toggleLanguage);
 
 window.addEventListener("load", () => {
+  resetMobileStoryReady();
   updateLayoutCache();
   updateStoryHeight();
   applyGlobalLanguage();
@@ -1705,9 +1752,11 @@ window.addEventListener("load", () => {
   syncCurrentStationFromScroll();
   applyMobileCardLayout("stack");
   renderScene(state.smoothProgress);
+  queueMobileStoryReady();
   state.rafId = requestAnimationFrame(tick);
 
   setTimeout(() => {
+    resetMobileStoryReady();
     updateLayoutCache();
     updateStoryHeight();
     state.lastRenderKey = "";
@@ -1715,6 +1764,7 @@ window.addEventListener("load", () => {
     state.lastMobileLayoutKey = "";
     renderScene(state.smoothProgress);
     syncCurrentStationFromScroll();
+    queueMobileStoryReady();
   }, 180);
 });
 
@@ -1731,6 +1781,10 @@ document.addEventListener("visibilitychange", () => {
   ensureAmbientPlayback(video3);
   state.lastTime = performance.now();
   state.lastRenderKey = "";
+
+  if (layoutCache.isMobile) {
+    queueMobileStoryReady();
+  }
 });
 
 window.addEventListener("beforeunload", () => {
@@ -1738,6 +1792,7 @@ window.addEventListener("beforeunload", () => {
   cancelSnapAnimation();
   observer.disconnect();
   clearCopySwapTimer();
+  clearMobileReadyFrames();
 
   if (snapState.wheelTimer) clearTimeout(snapState.wheelTimer);
   if (snapState.releaseSnapTimer) clearTimeout(snapState.releaseSnapTimer);
